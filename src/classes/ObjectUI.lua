@@ -193,12 +193,26 @@ function ObjectUI:paint()
 end
 
 ---Tick the UI object.<br>**This function is virtual and must be defined in a child class**
----@param dt seconds
+---@param dt seconds Love update delta-time
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:tick(dt)
 end
 
+---Perform click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@param but number
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:click(x, y, but)
+end
 
+---Perform click release action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@param but number
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:clickRelease(x, y, but)
+end
 
 -- uiobj fnc
 
