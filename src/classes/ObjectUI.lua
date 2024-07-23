@@ -34,6 +34,7 @@ local uiobj = {}
 ---@field protected y pixels Y coordinate of the UI object in pixels.
 ---@field protected w pixels Width of the UI object in pixels.
 ---@field protected h pixels Height of the UI object in pixels.
+---@field protected hl boolean Flag, if the UI object is currently hovered on.
 ---@field protected draw boolean Flag, if the UI object should be drawn on screen on paint call.
 ---@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
@@ -157,6 +158,32 @@ function ObjectUI:getHeight()
     return self.h
 end
 
+--- Hover
+
+---Check, if coordinates provided are in boundaries of the UI object
+---@param x pixels Mouse X position in pixels
+---@param y pixels Mouse Y position in pixels
+---@return ObjectUI|false hover Returns object pointer if the mouse if hovering on the object, false otherwise
+function ObjectUI:checkHover(x, y)
+    return x >= self.x and x <= self.x + self.w and y >= self.y and y <= self.y + self.h and self
+end
+
+---Trigger hover-on callback when the UI object gains hover focus
+---@param x pixels Mouse X position in pixels
+---@param y pixels Mouse Y position in pixels
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:hoverOn(x, y)
+    self.hl = true
+end
+
+---Trigger hover-off callback when the UI object loses hover focus
+---@param x pixels Mouse X position in pixels
+---@param y pixels Mouse Y position in pixels
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:hoverOff(x, y)
+    self.hl = false
+end
+
 --- Virtuals
 
 ---Paint the UI object on screen.<br>**This function is virtual and must be defined in a child class**
@@ -171,6 +198,8 @@ end
 function ObjectUI:tick(dt)
 end
 
+
+
 -- uiobj fnc
 
 ---Create new ObjectUI object and assign class metatable to it.
@@ -183,6 +212,8 @@ function uiobj.new(dimensions)
         y = dimensions[2],
         w = dimensions[3],
         h = dimensions[4],
+
+        hl = false,
 
         draw = true,
         update = true,
