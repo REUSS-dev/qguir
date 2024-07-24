@@ -34,6 +34,9 @@ local heldObject                    ---@type ObjectUI [TODO-1] May be implemente
 
 setmetatable(registeredAssociative, {__mode = 'k'})
 
+local love = love
+local love_update, love_draw, love_mousepressed, love_mousereleased = love.update, love.draw, love.mousepressed, love.mousereleased
+
 -- fnc
 
 local function stellar_update(dt)
@@ -106,21 +109,16 @@ end
 --- Stellar hook
 
 function stellar.hook()
-    local love = love
-
-    local love_update = love.update
     love.update = function(dt)
         love_update(dt)
         stellar_update(dt)
     end
 
-    local love_draw = love.draw
     love.draw = function()
         love_draw()
         stellar_draw()
     end
 
-    local love_mousepressed = love.mousepressed
     love.mousepressed = function (x, y, but)
         if currentHl then
             heldObject = currentHl
@@ -131,7 +129,6 @@ function stellar.hook()
         end
     end
 
-    local love_mousereleased = love.mousereleased
     love.mousereleased = function (x, y, but)
         if heldObject then
             heldObject:clickRelease(x, y, but)
