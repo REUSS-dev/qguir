@@ -19,13 +19,15 @@ local stellar = {}
 
 -- config
 
-
+local externalTypesDir = "classes/objects"
 
 -- consts
 
 
 
 -- vars
+
+local objects = {} ---@todo переименовать
 
 local registeredObjects = {}        ---@type {[registeredIndex]: ObjectUI} Currently registered objects in the system that are eligible for update and draw.
 local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Associative array of registered objects used to get registration index by object reference
@@ -43,6 +45,22 @@ local love = love
 local love_update, love_draw, love_mousepressed, love_mousereleased = love.update, love.draw, love.mousepressed, love.mousereleased
 
 -- fnc
+
+local function registerType(typeDescriptor)
+    objects[typeDescriptor.name] = typeDescriptor
+
+    if typeDescriptor.aliases then
+        for _, alias in ipairs(typeDescriptor.aliases) do
+            objects[alias] = typeDescriptor
+        end        
+    end
+end
+
+local function loadExternalTypes()
+    local items = love.filesystem.getDirectoryItems(externalTypesDir)
+
+    ---@todo external classes import
+end
 
 ---Standard update function for the functionality of StellarGUI
 ---@param dt seconds
@@ -128,6 +146,8 @@ function definition_parsers.position(def, sink)
     return true
 end
 
+
+
 -- classes
 
 
@@ -166,6 +186,8 @@ function stellar.unregister(uiobj)
     registeredObjects[uiobj] = nil
     return true
 end
+
+
 
 --- Stellar hook
 

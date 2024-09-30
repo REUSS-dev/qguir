@@ -9,7 +9,8 @@ local uiobj = {}
 
 -- config
 
-
+uiobj.name = "ObjectUI"
+uiobj.aliases = {"uiobj"}
 
 -- consts
 
@@ -213,6 +214,8 @@ end
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:clickRelease(x, y, but)
 end
+
+uiobj.class = ObjectUI
 
 -- uiobj fnc
 

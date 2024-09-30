@@ -9,7 +9,8 @@ local composite = require("classes.CompositeObject")
 
 -- config
 
-
+panel.name = "Panel"
+panel.aliases = {}
 
 -- consts
 

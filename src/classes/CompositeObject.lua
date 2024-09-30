@@ -9,7 +9,8 @@ local uiobj = require("classes.ObjectUI")
 
 -- config
 
-
+composite.name = "CompositeObject"
+composite.aliases = {"Composite"}
 
 -- consts
 
@@ -122,6 +123,8 @@ function CompositeObject:clickRelease(x, y, but)
 end
 
 setmetatable(CompositeObject, {__index = uiobj.class}) -- Set parenthesis
+
+composite.class = CompositeObject
 
 -- composite fnc
 
