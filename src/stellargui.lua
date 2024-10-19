@@ -229,6 +229,44 @@ function stellar.unregister(uiobj)
     return true
 end
 
+function stellar.loadExternalObjects(path)
+    local path = path or externalTypesDir
+
+    if not love.filesystem.exists(path) then
+        print(string.format("Failed loading object from %s. Path does not exist", path))
+        return
+    end
+
+    if love.filesystem.isFile(path) then
+        local objectFileChunk = love.filesystem.load(path)
+
+        if not objectFileChunk then
+            print(string.format("Failed loading object from %s. Compilation failed", path))
+            return
+        end
+
+        local descriptor = objectFileChunk()
+
+        if type(descriptor) ~= "table" or not descriptor.name then
+            print(string.format("Failed loading object from %s. Bad returning or table is not an object descriptor", path))
+            return
+        end
+
+        registerType(descriptor)
+
+        print(string.format("Loaded object %s from %s, aliases: %s", descriptor.name, path, table.concat(descriptor.aliases or {}, ", ")))
+
+        return true
+    end
+
+    local items = love.filesystem.getDirectoryItems(path)
+
+    for _, item in ipairs(items) do
+        print(string.format("Loading object from %s", path .. "/" .. item))
+        stellar.loadExternalObjects(path .. "/" .. item)
+    end
+end
+
 --- Stellar hook
 
 function stellar.hook()
