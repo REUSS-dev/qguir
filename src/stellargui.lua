@@ -10,24 +10,27 @@ local stellar = {}
 
 ---@alias pixels number Amount of pixels.
 ---@alias seconds number Amount of seconds
----@alias DimensionsXYWH {[1]: pixels, [2]: pixels, [3]: pixels, [4]:pixels} Structure for some object's X position, Y position, width and height.
+---@alias DimensionsXYWH {[1]: pixels, [2]: pixels, [3]: pixels, [4]: pixels} Structure for some object's X position, Y position, width and height.
 
 ---@alias ObjectDefinition table Table, which contains UI object definition fields, and is to be processed by UI object definition Parser
----@alias ObjectParser fun(definition: ObjectDefinition, sink: table):boolean A function, that processes UI object definition and outputs prepared parameters into sink. If it fails to process given definition, it will return false.
+---@alias ObjectParser fun(definition: ObjectDefinition, sink: ObjectPrototype):boolean A function, that processes UI object definition and outputs prepared parameters into sink. If it fails to process given definition, it will return false.
+---@alias ObjectParserName string
+---@alias ObjectParsingRule ObjectParserName|function|{[1]: ObjectParserName, [2]: ObjectDefinition}|{[1]: string[], [2]: string, [3]: ObjectDefinition, [4]: ParsingRule[]?}
+---@alias ObjectPrototype table Table, which contains valid object keys and parameters. Usually returned from parseDefinition
 
 ---@alias registeredIndex number Index of the registered UI object that it can be referenced by in lib functions
 
 -- config
 
-local externalTypesDir = "classes/objects"
+local externalTypesDir = "src/classes/objects"
 
 -- consts
 
-
+local PATTERN_FILENAME = "[^\\/]+$"
 
 -- vars
 
-local objects = {} ---@todo переименовать
+local objects = {} ---@todo переименовать. Таблица с дескрипторами типов объектов
 
 local registeredObjects = {}        ---@type {[registeredIndex]: ObjectUI} Currently registered objects in the system that are eligible for update and draw.
 local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Associative array of registered objects used to get registration index by object reference
@@ -54,12 +57,6 @@ local function registerType(typeDescriptor)
             objects[alias] = typeDescriptor
         end        
     end
-end
-
-local function loadExternalTypes()
-    local items = love.filesystem.getDirectoryItems(externalTypesDir)
-
-    ---@todo external classes import
 end
 
 ---Standard update function for the functionality of StellarGUI
@@ -93,12 +90,10 @@ local function stellar_draw()
     end
 end
 
---- Parsers collection
+--#region Parsers collection
 
 ---Parser for object width and height.<br>Will parse size (ex. width = 200, height = 100) correctly if it is defined in the definition table as any of following:<br>{0, 0, 200, 100}<br>{"objectName", 0, 0, 200, 100}<br>{w = 200, h = 100}<br>{width = 200, height = 100}<br>{ size = {200, 100} }
----@param def ObjectDefinition
----@param sink table
----@return boolean success
+---@type ObjectParser
 function definition_parsers.sizeRectangular(def, sink)
     local width = def.w or def.width or (def.size or {})[1] or (type(def[1]) == "number") and def[3] or (type(def[2]) == "number") and def[4]
     local height = def.h or def.height or (def.size or {})[2] or (type(def[1]) == "number") and def[4] or (type(def[2]) == "number") and def[5]
@@ -114,9 +109,7 @@ function definition_parsers.sizeRectangular(def, sink)
 end
 
 ---Parser for object position on the screen.<br>Will parse position (ex. x = 200, y = 100) correctly if it is defined in the definition table as any of following:<br>{200, 100}<br>{"objectName", 200, 100}<br>{x = 200, y = 100}<br>{horizontal = 200, vertical = 100}<br>{ position = {200, 100} }<br>{ pos = {200, 100} }<br>{ coordinates = {200, 100} }<br>**Also supports setting one of the dimensions to the string<br>"center"/"centered"/"middle"/"mid" (any of the following) to center object's position based on its size.<br>Also supports negative coordinates.<br>Position of the object will be counted from the other edge of screen in this case (respecting object's size)**
----@param def ObjectDefinition
----@param sink table
----@return boolean success
+---@type ObjectParser
 function definition_parsers.position(def, sink)
     local x = def.x or def.horizontal or (def.position or {})[1] or (def.pos or {})[1] or (def.coordinates or {})[1] or (type(def[1]) == "number") and def[1] or (type(def[2]) == "number") and def[2]
     local y = def.y or def.vertical or (def.position or {})[2] or (def.pos or {})[2] or (def.coordinates or {})[2] or (type(def[1]) == "number") and def[2] or (type(def[2]) == "number") and def[3]
@@ -125,7 +118,7 @@ function definition_parsers.position(def, sink)
         return false
     end
 
-    local sw, sh = love.graphcis.getWidth(), love.graphics.getHeight()
+    local sw, sh = love.graphics.getWidth(), love.graphics.getHeight()
 
     if type(x) == "string" then
         if x == "center" or x == "centered" or x == "middle" or x == "mid" then
@@ -143,10 +136,59 @@ function definition_parsers.position(def, sink)
         y = sh - sink.h + y
     end
 
+    sink.x = x
+    sink.y = y
+
     return true
 end
 
+--#endregion
 
+---Parse provided definition into object prototype
+---@param definition ObjectDefinition
+---@param rules ObjectParsingRule[]
+---@return ObjectPrototype
+local function parseDefinition(definition, rules)
+    local objectPrototype = {}
+    
+    for _, parser in ipairs(rules) do
+        if type(parser) == "string" then -- 1. Stupid parsing (not aware of failure)
+            definition_parsers[parser](definition, objectPrototype)
+        elseif type(parser) == "function" then -- 2. Custom object type-provided parser
+            parser(definition, objectPrototype)
+        elseif type(parser) == "table" then
+            if type(parser[1]) == "string" then -- 3. Parsing with default value set
+                if not definition_parsers[parser[1]](definition, objectPrototype) then
+                    definition_parsers[parser[1]](parser[2], objectPrototype)
+                end
+            elseif type(parser[1]) == "table" then -- 4. Simple parsing
+                local possibleInputNames, outputName, defaultValue, appliedRules = parser[1], parser[2], parser[3], parser[4]
+                local value
+
+                for _, name in ipairs(possibleInputNames) do
+                    if type(definition[name]) ~= "nil" then
+                        value = definition[name]
+                        break
+                    end
+                end
+
+                if type(value) == "nil" then
+                    value = defaultValue
+                end
+
+                if not appliedRules then -- 4.1. Generalized passthrough
+                    objectPrototype[outputName] = value
+                else -- 4.2 Generalized recursive parsing
+                    objectPrototype[outputName] = parseDefinition(value, appliedRules)
+                end
+            end
+        end
+    end
+
+    return objectPrototype
+end
+
+---@debug parsing test print(parseDefinition({numb = false, aquarium = {12, 123}}, {{"position", {10, 20}}, {{"isWhale"}, "fish", "false"}, {{"numb"}, "n", 123}, {{"fishtank", "aquarium"}, "aqua", {}, {"position"}}}).aqua.x)
 
 -- classes
 
@@ -187,8 +229,6 @@ function stellar.unregister(uiobj)
     return true
 end
 
-
-
 --- Stellar hook
 
 function stellar.hook()
@@ -224,9 +264,5 @@ function stellar.hook()
 
     return stellar
 end
-
---- Parsers
-
-stellar.parser_collection = definition_parsers
 
 return stellar
