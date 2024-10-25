@@ -11,6 +11,7 @@ local composite = require("classes.CompositeObject")
 
 panel.name = "Panel"
 panel.aliases = {}
+panel.rules = {}
 
 -- consts
 
@@ -38,8 +39,8 @@ setmetatable(Panel, {__index = composite.class}) -- Set parenthesis
 
 -- panel fnc
 
-function panel.new(dimensions)
-    local obj = composite.new(dimensions)
+function panel.new(prototype)
+    local obj = composite.new(prototype)
     ---@cast obj Panel
 
     setmetatable(obj, Panel_meta)

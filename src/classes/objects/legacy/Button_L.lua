@@ -1,8 +1,6 @@
 -- button_legacy
 local button_legacy = {}
 
-local gui = require("stellargui")
-
 local uiobj = require("classes.ObjectUI")
 
 -- documentation
@@ -13,6 +11,10 @@ local uiobj = require("classes.ObjectUI")
 
 button_legacy.name = "Button_L"
 button_legacy.aliases = {}
+button_legacy.rules = {
+    {"sizeRectangular", {0, 0, 100, 50}},
+    {"position", {position = {"center", "center"}}}
+}
 
 -- consts
 
@@ -36,23 +38,24 @@ button_legacy.aliases = {}
 local Button_L = {}
 local Button_L_meta = {__index = Button_L}
 
+function Button_L:paint()
+    love.graphics.setColor(self.hl and {1,0,0} or {1,1,1})
+    love.graphics.rectangle("fill", self.x, self.y, self.w, self.h)
+end
+
 setmetatable(Button_L, {__index = uiobj.class}) -- Set parenthesis
 
 button_legacy.class = Button_L
 
 -- button_legacy fnc
 
-function button_legacy.new(dimensions)
-    local obj = uiobj.new(dimensions)
+function button_legacy.new(prototype)
+    local obj = uiobj.new(prototype)
     ---@cast obj Button_L
 
     setmetatable(obj, Button_L_meta)
 
     return obj
-end
-
-function button_legacy.construct(parameters)
-    
 end
 
 return button_legacy

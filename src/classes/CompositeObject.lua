@@ -11,6 +11,7 @@ local uiobj = require("classes.ObjectUI")
 
 composite.name = "CompositeObject"
 composite.aliases = {"Composite"}
+composite.rules = {}
 
 -- consts
 
@@ -128,8 +129,11 @@ composite.class = CompositeObject
 
 -- composite fnc
 
-function composite.new(dimensions)
-    local obj = uiobj.new(dimensions)
+---Create new CompositeObject
+---@param prototype ObjectPrototype
+---@return CompositeObject
+function composite.new(prototype)
+    local obj = uiobj.new(prototype)
     ---@cast obj CompositeObject
 
     obj.objects = {}

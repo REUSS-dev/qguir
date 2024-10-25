@@ -11,6 +11,7 @@ local uiobj = {}
 
 uiobj.name = "ObjectUI"
 uiobj.aliases = {"uiobj"}
+uiobj.rules = {}
 
 -- consts
 
@@ -220,22 +221,16 @@ uiobj.class = ObjectUI
 -- uiobj fnc
 
 ---Create new ObjectUI object and assign class metatable to it.
----@param dimensions DimensionsXYWH Dimensions of a new object in a table[4] format.
+---@param prototype ObjectPrototype Dimensions of a new object in a table[4] format.
 ---@return ObjectUI object New UI object
-function uiobj.new(dimensions)
-    ---@type ObjectUI
-    local obj = {
-        x = dimensions[1],
-        y = dimensions[2],
-        w = dimensions[3],
-        h = dimensions[4],
+function uiobj.new(prototype)
+    local obj = prototype
 
-        hl = false,
+    obj.hl = false
 
-        draw = true,
-        update = true,
-        interactible = true
-    }
+    obj.draw = true
+    obj.update = true
+    obj.interactible = true
 
     setmetatable(obj, ObjectUI_meta)
 
