@@ -12,6 +12,8 @@ local stellar = {}
 ---@alias seconds number Amount of seconds
 ---@alias DimensionsXYWH {[1]: pixels, [2]: pixels, [3]: pixels, [4]: pixels} Structure for some object's X position, Y position, width and height.
 
+---@alias ObjectDescriptor {name: string, aliases: string[], new: (fun(prototype: ObjectPrototype):ObjectUI), rules: ObjectParsingRule[], construct: fun(ObjectDefinition): ObjectUI}
+
 ---@alias ObjectDefinition table Table, which contains UI object definition fields, and is to be processed by UI object definition Parser
 ---@alias ObjectParser fun(definition: ObjectDefinition, sink: ObjectPrototype):boolean A function, that processes UI object definition and outputs prepared parameters into sink. If it fails to process given definition, it will return false.
 ---@alias ObjectParserName string
@@ -30,7 +32,8 @@ local PATTERN_FILENAME = "[^\\/]+$"
 
 -- vars
 
-local objects = {} ---@todo переименовать. Таблица с дескрипторами типов объектов
+---@todo переименовать. Таблица с дескрипторами типов объектов
+local objects = {}                  ---@type table<string, ObjectDescriptor>
 
 local registeredObjects = {}        ---@type {[registeredIndex]: ObjectUI} Currently registered objects in the system that are eligible for update and draw.
 local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Associative array of registered objects used to get registration index by object reference
@@ -47,17 +50,15 @@ setmetatable(registeredAssociative, {__mode = 'k'})
 local love = love
 local love_update, love_draw, love_mousepressed, love_mousereleased = love.update, love.draw, love.mousepressed, love.mousereleased
 
--- fnc
-
-local function registerType(typeDescriptor)
-    objects[typeDescriptor.name] = typeDescriptor
-
-    if typeDescriptor.aliases then
-        for _, alias in ipairs(typeDescriptor.aliases) do
-            objects[alias] = typeDescriptor
-        end        
+setmetatable(stellar, {
+    __index = function (self, key)
+        if objects[key] then
+            return objects[key].construct
+        end
     end
-end
+})
+
+-- fnc
 
 ---Standard update function for the functionality of StellarGUI
 ---@param dt seconds
@@ -70,11 +71,17 @@ local function stellar_update(dt)
         hlObject = registered:checkHover(x, y) or hlObject
     end
 
-    ---@cast hlObject ObjectUI
+    ---@cast hlObject ObjectUI?
 
     if hlObject ~= currentHl then
-        currentHl:hoverOff(x, y)
-        hlObject:hoverOn(x, y)
+        if currentHl then
+            currentHl:hoverOff(x, y)
+        end
+
+        if hlObject then
+            hlObject:hoverOn(x, y)
+        end
+
         currentHl = hlObject
     end
 
@@ -189,6 +196,23 @@ local function parseDefinition(definition, rules)
 end
 
 ---@debug parsing test print(parseDefinition({numb = false, aquarium = {12, 123}}, {{"position", {10, 20}}, {{"isWhale"}, "fish", "false"}, {{"numb"}, "n", 123}, {{"fishtank", "aquarium"}, "aqua", {}, {"position"}}}).aqua.x)
+
+---Register UI object type descriptor
+---@param typeDescriptor ObjectDescriptor
+local function registerType(typeDescriptor)
+    function typeDescriptor.construct(def)
+        local prototype = parseDefinition(def, typeDescriptor.rules)
+        return typeDescriptor.new(prototype)
+    end
+
+    objects[typeDescriptor.name] = typeDescriptor
+
+    if typeDescriptor.aliases then
+        for _, alias in ipairs(typeDescriptor.aliases) do
+            objects[alias] = typeDescriptor
+        end        
+    end
+end
 
 -- classes
 

@@ -4,6 +4,9 @@ function love.load()
 
     local gui = require("stellargui").hook()
     gui.loadExternalObjects()
+
+    local exampleB = gui.Button_L{}
+    gui.register(exampleB)
 end
 
 function love.update(dt)
