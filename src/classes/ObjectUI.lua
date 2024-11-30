@@ -212,8 +212,50 @@ end
 ---@param x pixels
 ---@param y pixels
 ---@param but number
+---@return boolean? pass Return **true**, if object skips click release processing and possibly directs it to the hl object.
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:clickRelease(x, y, but)
+end
+
+---Perform click release action on UI object. Implies initial click action was not on THIS object.<br>Direct result of returning **true** from ObjectUI:clickRelease() of another object.<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@param but number
+---@param orginalClicked ObjectUI Original object that click action was initiated on.
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:clickReleaseExterior(x, y, but, orginalClicked)
+end
+
+---React on UI object getting keyboard focus<br>**This function is virtual and must be defined in a child class**
+function ObjectUI:gainFocus()
+end
+
+---React on UI object losing keyboard focus<br>**This function is virtual and must be defined in a child class**
+function ObjectUI:loseFocus()
+end
+
+---Perform key press action on UI object.<br>**This function is virtual and must be defined in a child class**
+---@param key love.KeyConstant
+---@param scancode love.Scancode
+---@param isrepeat boolean
+---@return boolean? revokeFocus Return **true**, if object voluntarily revokes its keyboard focus and directs key press processing to upper level.
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:keyPress(key, scancode, isrepeat)
+end
+
+---Perform key release action on UI object.<br>**This function is virtual and must be defined in a child class**
+---@param key love.KeyConstant
+---@param scancode love.Scancode
+---@param isrepeat boolean
+---@return boolean? revokeFocus Return **true**, if object voluntarily revokes its keyboard focus and directs key release processing to upper level.
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:keyRelease(key, scancode, isrepeat)
+end
+
+---Passes input text to the UI object.<br>**This function is virtual and must be defined in a child class**
+---@param text string
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:textinput(text)
 end
 
 uiobj.class = ObjectUI

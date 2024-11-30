@@ -40,6 +40,7 @@ local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Assoc
 
 local currentHl                     ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
 local heldObject                    ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
+local focusedObject                 ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
 
 local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
 
@@ -47,9 +48,9 @@ local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection
 
 setmetatable(registeredAssociative, {__mode = 'k'})
 
---local love = love
+--local love = love ---@todo удалить?
 local nopFunc = function() end
-local love_update, love_draw, love_mousepressed, love_mousereleased = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc
+local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc
 
 setmetatable(stellar, {
     __index = function (self, key)
@@ -313,19 +314,68 @@ function stellar.hook()
         if currentHl then
             heldObject = currentHl
 
+            if focusedObject ~= currentHl then
+                if focusedObject then
+                    focusedObject:loseFocus()
+                end
+
+                focusedObject = currentHl
+                focusedObject:gainFocus()
+            end
+
             currentHl:click(x, y, but)
         else
+            if focusedObject then
+                focusedObject:loseFocus()
+                focusedObject = nil
+            end
+
             love_mousepressed(x, y, but)
         end
     end
 
     love.mousereleased = function (x, y, but)
         if heldObject then
-            heldObject:clickRelease(x, y, but)
+
+            if heldObject:clickRelease(x, y, but) then
+                if currentHl and (heldObject ~= currentHl) then
+                    currentHl:clickReleaseExterior(x, y, but, heldObject)
+                end
+            end
 
             heldObject = nil
         else
             love_mousereleased(x, y, but)
+        end
+    end
+
+    love.keypressed = function (key, scancode, isrepeat)
+        if focusedObject then
+            if focusedObject:keyPress(key, scancode, isrepeat) then
+                focusedObject:loseFocus()
+                focusedObject = nil
+            end
+        else
+            love_keypressed(key, scancode, isrepeat)
+        end
+    end
+
+    love.keyreleased = function (key, scancode, isrepeat)
+        if focusedObject then
+            if focusedObject:keyRelease(key, scancode, isrepeat) then
+                focusedObject:loseFocus()
+                focusedObject = nil
+            end
+        else
+            love_keyreleased(key, scancode, isrepeat)
+        end
+    end
+
+    love.textinput = function (text)
+        if focusedObject then
+            focusedObject:textinput(text)
+        else
+            love_textinput(text)
         end
     end
 

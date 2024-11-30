@@ -5,7 +5,10 @@ function love.load()
     local gui = require("stellargui").hook()
     gui.loadExternalObjects()
 
-    local exampleB = gui.Button_L{}
+    local exampleA = gui.Button_L{x = "center", y = 100}
+
+    local exampleB = gui.Button_L{x = "center", y = 400}
+    gui.register(exampleA)
     gui.register(exampleB)
 end
 

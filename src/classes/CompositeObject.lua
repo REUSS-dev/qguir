@@ -36,6 +36,7 @@ composite.rules = {}
 ---@field hlObject ObjectUI|false UI object, that currently has focus out of all UI objects iside the composite object
 ---@field hlObjectBuffer ObjectUI|false UI object, that potentially can get focus after the call of onHover()
 ---@field clickObjectBuffer ObjectUI|false UI object, that will recieve clickRelease event call when the composite object receives it
+---@field focusedObject ObjectUI|false UI object, that will recieve keyboard events when the composite object receives them
 local CompositeObject = {}
 local CompositeObject_meta = {__index = CompositeObject}
 
@@ -108,7 +109,20 @@ end
 function CompositeObject:click(x, y, but)
     if self.hlObject then
         self.clickObjectBuffer = self.hlObject
+
+        if self.focusedObject ~= self.hlObject then
+            if self.focusedObject then
+                self.focusedObject:loseFocus()
+            end
+
+            self.focusedObject = self.hlObject
+            self.focusedObject:gainFocus()
+        end
+
         self.hlObject:click(x, y, but)
+    elseif self.focusedObject then
+        self.focusedObject:loseFocus()
+        self.focusedObject = nil
     end
 end
 
@@ -118,8 +132,24 @@ end
 ---@param but number
 function CompositeObject:clickRelease(x, y, but)
     if self.clickObjectBuffer then
-       self.clickObjectBuffer:clickRelease(x, y, but)
-       self.clickObjectBuffer = false
+        if self.clickObjectBuffer:clickRelease(x, y, but) then
+            if self.hlObject then
+                if self.clickObjectBuffer ~= self.hlObject then
+                    self.hlObject:clickReleaseExterior(x, y, but, self.clickObjectBuffer)
+                end
+            else
+                self.clickObjectBuffer = false
+                return true
+            end
+        end
+
+        self.clickObjectBuffer = false
+    end
+end
+
+function CompositeObject:clickReleaseExterior(x, y, but, orig)
+    if self.hlObject then
+        self.hlObject:clickReleaseExterior(x, y, but, orig)
     end
 end
 
@@ -141,6 +171,7 @@ function composite.new(prototype)
     obj.hlObject = false
     obj.hlObjectBuffer = false
     obj.clickObjectBuffer = false
+    obj.focusedObject = false
 
     setmetatable(obj, CompositeObject_meta)
 
