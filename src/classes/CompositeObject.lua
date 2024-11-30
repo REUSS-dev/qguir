@@ -153,6 +153,39 @@ function CompositeObject:clickReleaseExterior(x, y, but, orig)
     end
 end
 
+function CompositeObject:loseFocus()
+    if self.focusedObject then
+        self.focusedObject:loseFocus()
+        self.focusedObject = nil
+    end
+
+    self.focus = false
+end
+
+function CompositeObject:keyPress(key, scancode, isrepeat)
+    if self.focusedObject then
+        if self.focusedObject:keyPress(key, scancode, isrepeat) then
+            self.focusedObject:loseFocus()
+            self.focusedObject = nil
+        end
+    end
+end
+
+function CompositeObject:keyRelease(key, scancode, isrepeat)
+    if self.focusedObject then
+        if self.focusedObject:keyRelease(key, scancode, isrepeat) then
+            self.focusedObject:loseFocus()
+            self.focusedObject = nil
+        end
+    end
+end
+
+function CompositeObject:textinput(text)
+    if self.focusedObject then
+        self.focusedObject:textinput(text)
+    end
+end
+
 setmetatable(CompositeObject, {__index = uiobj.class}) -- Set parenthesis
 
 composite.class = CompositeObject
