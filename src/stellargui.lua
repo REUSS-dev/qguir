@@ -47,8 +47,9 @@ local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection
 
 setmetatable(registeredAssociative, {__mode = 'k'})
 
-local love = love
-local love_update, love_draw, love_mousepressed, love_mousereleased = love.update, love.draw, love.mousepressed, love.mousereleased
+--local love = love
+local nopFunc = function() end
+local love_update, love_draw, love_mousepressed, love_mousereleased = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc
 
 setmetatable(stellar, {
     __index = function (self, key)
@@ -147,6 +148,10 @@ function definition_parsers.position(def, sink)
     sink.y = y
 
     return true
+end
+
+function definition_parsers.color(def, sink)
+    ---@todo
 end
 
 --#endregion
