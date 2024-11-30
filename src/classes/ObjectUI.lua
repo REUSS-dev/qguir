@@ -37,6 +37,7 @@ uiobj.rules = {}
 ---@field protected w pixels Width of the UI object in pixels.
 ---@field protected h pixels Height of the UI object in pixels.
 ---@field protected hl boolean Flag, if the UI object is currently hovered on.
+---@field protected focus boolean Flag, if the UI object is currently focused on.
 ---@field protected draw boolean Flag, if the UI object should be drawn on screen on paint call.
 ---@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
@@ -228,10 +229,12 @@ end
 
 ---React on UI object getting keyboard focus<br>**This function is virtual and must be defined in a child class**
 function ObjectUI:gainFocus()
+    self.focus = true
 end
 
 ---React on UI object losing keyboard focus<br>**This function is virtual and must be defined in a child class**
 function ObjectUI:loseFocus()
+    self.focus = false
 end
 
 ---Perform key press action on UI object.<br>**This function is virtual and must be defined in a child class**
@@ -269,6 +272,7 @@ function uiobj.new(prototype)
     local obj = prototype
 
     obj.hl = false
+    obj.focus = false
 
     obj.draw = true
     obj.update = true
