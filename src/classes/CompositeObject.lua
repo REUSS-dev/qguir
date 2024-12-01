@@ -52,7 +52,7 @@ function CompositeObject:checkHover(x, y)
     local hlObject
 
     for _, uiobject in pairs(self.objects) do
-        hlObject = uiobject:checkHover(x, y) or hlObject
+        hlObject = uiobject:isActive() and uiobject:checkHover(x, y) or hlObject
     end
 
     if not hlObject then
@@ -91,14 +91,18 @@ end
 ---@param dt seconds
 function CompositeObject:tick(dt)
     for _, uiobject in pairs(self.objects) do
-        uiobject:tick(dt)
+        if uiobject:isActive() then
+            uiobject:tick(dt)
+        end
     end
 end
 
 ---Paint all UI objects in a composite object.
 function CompositeObject:paint()
     for _, uiobject in pairs(self.objects) do
-        uiobject:paint()
+        if uiobject:isDrawn() then
+            uiobject:paint()
+        end
     end
 end
 
@@ -108,18 +112,20 @@ end
 ---@param but number
 function CompositeObject:click(x, y, but)
     if self.hlObject then
-        self.clickObjectBuffer = self.hlObject
+        if self.hlObject:isInteractible() then
+            self.clickObjectBuffer = self.hlObject
 
-        if self.focusedObject ~= self.hlObject then
-            if self.focusedObject then
-                self.focusedObject:loseFocus()
+            if self.focusedObject ~= self.hlObject then
+                if self.focusedObject then
+                    self.focusedObject:loseFocus()
+                end
+
+                self.focusedObject = self.hlObject
+                self.focusedObject:gainFocus()
             end
 
-            self.focusedObject = self.hlObject
-            self.focusedObject:gainFocus()
+            self.hlObject:click(x, y, but)
         end
-
-        self.hlObject:click(x, y, but)
     elseif self.focusedObject then
         self.focusedObject:loseFocus()
         self.focusedObject = nil
@@ -132,23 +138,32 @@ end
 ---@param but number
 function CompositeObject:clickRelease(x, y, but)
     if self.clickObjectBuffer then
-        if self.clickObjectBuffer:clickRelease(x, y, but) then
-            if self.hlObject then
-                if self.clickObjectBuffer ~= self.hlObject then
-                    self.hlObject:clickReleaseExterior(x, y, but, self.clickObjectBuffer)
-                end
-            else
+
+        if self.clickObjectBuffer:isInteractible() then
+            if not self.clickObjectBuffer:clickRelease(x, y, but) then
                 self.clickObjectBuffer = false
-                return true
+                return
             end
         end
+
+        if not self.hlObject then
+            self.clickObjectBuffer = false
+            return true
+        end
+
+        if (self.clickObjectBuffer == self.hlObject) or not self.hlObject:isInteractible() then
+            self.clickObjectBuffer = false
+            return
+        end
+
+        self.hlObject:clickReleaseExterior(x, y, but, self.clickObjectBuffer)
 
         self.clickObjectBuffer = false
     end
 end
 
 function CompositeObject:clickReleaseExterior(x, y, but, orig)
-    if self.hlObject then
+    if self.hlObject and self.hlObject:isInteractible() then
         self.hlObject:clickReleaseExterior(x, y, but, orig)
     end
 end
@@ -163,7 +178,7 @@ function CompositeObject:loseFocus()
 end
 
 function CompositeObject:keyPress(key, scancode, isrepeat)
-    if self.focusedObject then
+    if self.focusedObject and self.focusedObject:isInteractible() then
         if self.focusedObject:keyPress(key, scancode, isrepeat) then
             self.focusedObject:loseFocus()
             self.focusedObject = nil
@@ -172,7 +187,7 @@ function CompositeObject:keyPress(key, scancode, isrepeat)
 end
 
 function CompositeObject:keyRelease(key, scancode, isrepeat)
-    if self.focusedObject then
+    if self.focusedObject and self.focusedObject:isInteractible() then
         if self.focusedObject:keyRelease(key, scancode, isrepeat) then
             self.focusedObject:loseFocus()
             self.focusedObject = nil
@@ -181,7 +196,7 @@ function CompositeObject:keyRelease(key, scancode, isrepeat)
 end
 
 function CompositeObject:textinput(text)
-    if self.focusedObject then
+    if self.focusedObject and self.focusedObject:isInteractible() then
         self.focusedObject:textinput(text)
     end
 end

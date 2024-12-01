@@ -70,7 +70,7 @@ local function stellar_update(dt)
     local x, y = love.mouse.getX(), love.mouse.getY()
 
     for _, registered in pairs(registeredObjects) do
-        hlObject = registered:checkHover(x, y) or hlObject
+        hlObject = registered:isActive() and registered:checkHover(x, y) or hlObject
     end
 
     ---@cast hlObject ObjectUI?
@@ -88,14 +88,18 @@ local function stellar_update(dt)
     end
 
     for _, registered in pairs(registeredObjects) do
-        registered:tick(dt)
+        if registered:isActive() then
+            registered:tick(dt)
+        end
     end
 end
 
 ---Standard draw function for the functionality of StellarGUI
 local function stellar_draw()
     for _, registered in pairs(registeredObjects) do
-        registered:paint()
+        if registered:isDrawn() then
+            registered:paint()
+        end
     end
 end
 
@@ -312,18 +316,20 @@ function stellar.hook()
 
     love.mousepressed = function (x, y, but)
         if currentHl then
-            heldObject = currentHl
+            if currentHl:isInteractible() then
+                heldObject = currentHl
 
-            if focusedObject ~= currentHl then
-                if focusedObject then
-                    focusedObject:loseFocus()
+                if focusedObject ~= currentHl then
+                    if focusedObject then
+                        focusedObject:loseFocus()
+                    end
+
+                    focusedObject = currentHl
+                    focusedObject:gainFocus()
                 end
 
-                focusedObject = currentHl
-                focusedObject:gainFocus()
+                currentHl:click(x, y, but)
             end
-
-            currentHl:click(x, y, but)
         else
             if focusedObject then
                 focusedObject:loseFocus()
@@ -337,20 +343,26 @@ function stellar.hook()
     love.mousereleased = function (x, y, but)
         if heldObject then
 
-            if heldObject:clickRelease(x, y, but) then
-                if currentHl and (heldObject ~= currentHl) then
-                    currentHl:clickReleaseExterior(x, y, but, heldObject)
+            if heldObject:isInteractible() then
+                if not heldObject:clickRelease(x, y, but) then
+                    heldObject = nil
+                    return
                 end
             end
 
-            heldObject = nil
+            if currentHl and (heldObject ~= currentHl) and currentHl:isInteractible() then
+                currentHl:clickReleaseExterior(x, y, but, heldObject)
+
+                heldObject = nil
+                return
+            end
         else
             love_mousereleased(x, y, but)
         end
     end
 
     love.keypressed = function (key, scancode, isrepeat)
-        if focusedObject then
+        if focusedObject and focusedObject:isInteractible() then
             if focusedObject:keyPress(key, scancode, isrepeat) then
                 focusedObject:loseFocus()
                 focusedObject = nil
@@ -361,7 +373,7 @@ function stellar.hook()
     end
 
     love.keyreleased = function (key, scancode, isrepeat)
-        if focusedObject then
+        if focusedObject and focusedObject:isInteractible() then
             if focusedObject:keyRelease(key, scancode, isrepeat) then
                 focusedObject:loseFocus()
                 focusedObject = nil
@@ -372,7 +384,7 @@ function stellar.hook()
     end
 
     love.textinput = function (text)
-        if focusedObject then
+        if focusedObject and focusedObject:isInteractible() then
             focusedObject:textinput(text)
         else
             love_textinput(text)

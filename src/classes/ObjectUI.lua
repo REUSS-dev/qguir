@@ -50,12 +50,14 @@ local ObjectUI_meta = {__index = ObjectUI}
 function ObjectUI:hide()
     self.draw = false
     self.update = false
+    self.interactible = false
 end
 
 ---Show the UI object. Enable paint and tick for a UI object.
 function ObjectUI:show()
     self.draw = true
     self.update = true
+    self.interactible = true
 end
 
 ---Freeze the UI object. Disables tick for a UI object.
@@ -266,7 +268,7 @@ uiobj.class = ObjectUI
 -- uiobj fnc
 
 ---Create new ObjectUI object and assign class metatable to it.
----@param prototype ObjectPrototype Dimensions of a new object in a table[4] format.
+---@param prototype ObjectPrototype
 ---@return ObjectUI object New UI object
 function uiobj.new(prototype)
     local obj = prototype
