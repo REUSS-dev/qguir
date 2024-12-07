@@ -7,7 +7,7 @@ function love.load()
 
     local exampleA = gui.Button_L{x = "center", y = 100}
 
-    local exampleB = gui.Button_L{x = "center", y = 400}
+    local exampleB = gui.Button_L{x = "center", y = 400, color = {0.5,1,1}}
     gui.register(exampleA)
     gui.register(exampleB)
 end

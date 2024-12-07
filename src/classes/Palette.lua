@@ -14,15 +14,18 @@ local palette = {}
 ---@enum ColorNames
 local colorNames = {
     ---@see ColorIndex 1 - Main color
+    1,
     color = 1,
     fg = 1,
     foreground = 1,
     main = 1,
 
     ---@see ColorIndex 2 - Text color
+    2,
     text = 2,
 
     ---@see ColorIndex 3 - Additional color
+    3,
     additional = 3,
     background = 3,
     bg = 3,

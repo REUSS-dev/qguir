@@ -13,7 +13,8 @@ button_legacy.name = "Button_L"
 button_legacy.aliases = {}
 button_legacy.rules = {
     {"sizeRectangular", {0, 0, 100, 50}},
-    {"position", {position = {"center", "center"}}}
+    {"position", {position = {"center", "center"}}},
+    {"palette", {color = {0, 0.5, 0}, text = {1, 1, 1}}}
 }
 
 -- consts
@@ -50,7 +51,7 @@ function Button_L:hoverOn()
 end
 
 function Button_L:hoverOff()
-    self.color = {1,1,1}
+    self.color = self.palette[1]
 end
 
 function Button_L:click()

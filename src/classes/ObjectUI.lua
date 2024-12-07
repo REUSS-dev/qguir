@@ -41,6 +41,7 @@ uiobj.rules = {}
 ---@field protected draw boolean Flag, if the UI object should be drawn on screen on paint call.
 ---@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
+---@field protected palette Palette UI object color palette ( ---@todo temporary?)
 local ObjectUI = {}
 local ObjectUI_meta = {__index = ObjectUI}
 
