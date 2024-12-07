@@ -73,7 +73,7 @@ function CompositeObject:hoverOn(x, y)
     self.hlObject = self.hlObjectBuffer
     self.hlObjectBuffer = false
 
-    self.hlObject:hoverOn(x, y)
+    return self.hlObject:hoverOn(x, y)
 end
 
 ---Clear hlObject and trigger its hover-off callback when the composite UI object loses hover focus.

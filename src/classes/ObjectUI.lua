@@ -176,6 +176,7 @@ end
 ---Trigger hover-on callback when the UI object gains hover focus
 ---@param x pixels Mouse X position in pixels
 ---@param y pixels Mouse Y position in pixels
+---@return (string|love.Cursor)? cursorState Name of cursor type or cursor object to be used after hovering on this object.
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:hoverOn(x, y)
     self.hl = true

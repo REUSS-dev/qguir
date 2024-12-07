@@ -12,7 +12,7 @@ local paletteClass = require("classes.Palette")
 ---@alias seconds number Amount of seconds
 ---@alias DimensionsXYWH {[1]: pixels, [2]: pixels, [3]: pixels, [4]: pixels} Structure for some object's X position, Y position, width and height.
 
----@alias ObjectDescriptor {name: string, aliases: string[], new: (fun(prototype: ObjectPrototype):ObjectUI), rules: ObjectParsingRule[], construct: fun(ObjectDefinition): ObjectUI}
+---@alias ObjectDescriptor {name: string, aliases: string[]?, new: (fun(prototype: ObjectPrototype):ObjectUI), rules: ObjectParsingRule[], cursors: table<string, love.Cursor>?, construct: fun(ObjectDefinition): ObjectUI}
 
 ---@alias ObjectDefinition table Table, which contains UI object definition fields, and is to be processed by UI object definition Parser
 ---@alias ObjectParser fun(definition: ObjectDefinition, sink: ObjectPrototype):boolean A function, that processes UI object definition and outputs prepared parameters into sink. If it fails to process given definition, it will return false.
@@ -30,10 +30,14 @@ local externalTypesDir = "src/classes/objects"
 
 local PATTERN_FILENAME = "[^\\/]+$"
 
+local DEFAULT_CURSOR = "arrow"
+
 -- vars
 
 ---@todo переименовать. Таблица с дескрипторами типов объектов
 local objects = {}                  ---@type table<string, ObjectDescriptor>
+local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
+local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cursor}
 
 local registeredObjects = {}        ---@type {[registeredIndex]: ObjectUI} Currently registered objects in the system that are eligible for update and draw.
 local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Associative array of registered objects used to get registration index by object reference
@@ -42,7 +46,7 @@ local currentHl                     ---@type ObjectUI [TODO-1] May be implemente
 local heldObject                    ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
 local focusedObject                 ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
 
-local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
+local currentCursor = DEFAULT_CURSOR ---@type love.CursorType
 
 -- init
 
@@ -57,6 +61,13 @@ setmetatable(stellar, {
         if objects[key] then
             return objects[key].construct
         end
+    end
+})
+
+setmetatable(cursorStorage, {
+    __index = function (self, key)
+        self[key] = love.mouse.getSystemCursor(key)
+        return self[key]
     end
 })
 
@@ -76,12 +87,19 @@ local function stellar_update(dt)
     ---@cast hlObject ObjectUI?
 
     if hlObject ~= currentHl then
+        local newCursor = DEFAULT_CURSOR
+
         if currentHl then
             currentHl:hoverOff(x, y)
         end
 
         if hlObject then
-            hlObject:hoverOn(x, y)
+            newCursor = hlObject:hoverOn(x, y) or newCursor
+        end
+
+        if newCursor ~= currentCursor then
+            currentCursor = newCursor
+            love.mouse.setCursor(cursorStorage[newCursor])
         end
 
         currentHl = hlObject
@@ -243,6 +261,12 @@ local function registerType(typeDescriptor)
         for _, alias in ipairs(typeDescriptor.aliases) do
             objects[alias] = typeDescriptor
         end        
+    end
+
+    if typeDescriptor.cursors then
+        for cursorName, cursor in pairs(typeDescriptor.cursors) do
+            cursorStorage[cursorName] = cursor
+        end
     end
 end
 

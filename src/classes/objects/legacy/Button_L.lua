@@ -45,6 +45,8 @@ end
 
 function Button_L:hoverOn()
     self.color = {1,0,0}
+
+    return "hand"
 end
 
 function Button_L:hoverOff()
