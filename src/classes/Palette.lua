@@ -57,7 +57,7 @@ function Palette_meta:__index(key)
     local colorindex = colorNames[key]
 
     if colorindex then
-        return self.container[colorindex]
+        return self.container[colorindex] or self.container[1]
     else
         return Palette[key]
     end
@@ -84,15 +84,33 @@ end
 -- palette fnc
 
 ---Create new palette from an array of color tables
----@param colors ColorTable[]
+---@param colors ColorTable|table<number|ColorNames, ColorTable>?
 ---@return Palette PaletteObject
 function palette.new(colors)
-    ---@type Palette
     local obj = {
-        container = colors or {}
+        container = {}
     }
 
-    setmetatable(obj, Palette_meta)
+    setmetatable(obj, Palette_meta) ---@cast obj Palette
+
+    if not colors then
+        return obj
+    end
+
+    if type(colors[1]) == "number" then ---@diagnostic disable-next-line: assign-type-mismatch
+        obj.container[1] = colors
+        return obj
+    end
+
+    for key, color in pairs(colors) do
+        if type(key) == "number" then
+            obj.container[key] = color
+        elseif type(key) == "string" then
+            if colorNames[key] then
+                obj.container[colorNames[key]] = color
+            end
+        end
+    end
 
     return obj
 end
