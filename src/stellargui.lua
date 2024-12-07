@@ -1,7 +1,7 @@
 -- stellar
 local stellar = {}
 
-
+local paletteClass = require("classes.Palette")
 
 -- documentation
 
@@ -155,8 +155,30 @@ function definition_parsers.position(def, sink)
     return true
 end
 
-function definition_parsers.color(def, sink)
-    ---@todo
+function definition_parsers.palette(def, sink)
+    local palette = def.palette or def.palete or def.colors
+
+    if palette then
+        if type(palette) == "table" and palette.container then
+            sink.palette = palette
+            return true
+        end
+
+        sink.palette = paletteClass.new(palette)
+        return true
+    end
+
+    local color = def.color or def.mainColor or def.colorMain or def.main_color
+    local text = def.textColor or def.colorText or def.text_color
+    local alt = def.frameColor or def.colorFrame or def.additionalColor or def.colorAdditional or def.bgColor or def.hlColor
+
+    if not color then
+        return false        
+    end
+
+    sink.palette = paletteClass.new({color, text, alt})
+
+    return true
 end
 
 --#endregion
