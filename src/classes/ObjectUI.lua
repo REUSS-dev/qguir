@@ -178,6 +178,7 @@ end
 ---@param x pixels Mouse X position in pixels
 ---@param y pixels Mouse Y position in pixels
 ---@return (string|love.Cursor)? cursorState Name of cursor type or cursor object to be used after hovering on this object.
+---@todo TODO-3 Make ObjectUI:hoverOn return field of UI object that contains its cursorState
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:hoverOn(x, y)
     self.hl = true
