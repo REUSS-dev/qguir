@@ -76,7 +76,7 @@ function Button:hoverOn(x, y)
     return "hand"
 end
 
-function Button:click(but)
+function Button:click(_, _, but)
     if but == 1 then
         self.held = true
     end
@@ -108,8 +108,6 @@ setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
 ---Generate crucial data for button text printing
 ---@param nullify boolean? Should the existing text cache be voided completely. Set to true, when button size or text itself changes. 
 function Button:generateTextCache(nullify)
-    print("Text cache regeneration")
-
     if nullify then
         self.textCache = nil
     end
