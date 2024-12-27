@@ -190,11 +190,25 @@ function definition_parsers.palette(def, sink)
     local text = def.textColor or def.colorText or def.text_color
     local alt = def.frameColor or def.colorFrame or def.additionalColor or def.colorAdditional or def.bgColor or def.hlColor
 
-    if not color then
-        return false        
+    if sink.palette then
+        if not sink.palette:getColorByIndex(1) then
+            sink.palette:setColor(1, color)
+        end
+        if not sink.palette:getColorByIndex(2) then
+            sink.palette:setColor(2, text)
+        end
+        if not sink.palette:getColorByIndex(3) then
+            sink.palette:setColor(3, alt)
+        end
+
+        return true
     end
 
     sink.palette = paletteClass.new({color, text, alt})
+
+    if not color or not text or not alt then
+        return false        
+    end
 
     return true
 end
