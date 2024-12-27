@@ -76,7 +76,7 @@ function Button:hoverOn(x, y)
     return "hand"
 end
 
-function Button:click(x, y, but)
+function Button:click(but)
     if but == 1 then
         self.held = true
     end
@@ -99,7 +99,7 @@ function Button:keyPress(key)
 end
 
 function Button:move(x, y)
-    uiobj.class.move(self, x, y)
+    uiobj.class.move(self, math.floor(x), math.floor(y))
     self:generateTextCache()
 end
 
@@ -108,21 +108,23 @@ setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
 ---Generate crucial data for button text printing
 ---@param nullify boolean? Should the existing text cache be voided completely. Set to true, when button size or text itself changes. 
 function Button:generateTextCache(nullify)
+    print("Text cache regeneration")
+
     if nullify then
         self.textCache = nil
     end
 
     if self.textCache then
-        self.textCache.y = self.y + self.h*self.textCache.textLines/2
+        self.textCache.y = math.floor(self.y + self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
         return
     end
 
     self.textCache = {}
     
-    local fontHeight = self.font:getHeight()
+    self.textCache.fontHeight = self.font:getHeight()
     local _, lines = self.font:getWrap(self.text, self.w)
 
-    local allowedLines = math.floor(self.h/fontHeight)
+    local allowedLines = math.floor(self.h/self.textCache.fontHeight)
 
     if allowedLines == 0 then
         self.textCache.textVisual = "?"
@@ -143,7 +145,7 @@ function Button:generateTextCache(nullify)
         self.textCache.textLines = allowedLines
     end
 
-    self.textCache.y = math.floor(self.y + self.h/2 - fontHeight*self.textCache.textLines/2)
+    self.textCache.y = math.floor(self.y + self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
 end
 
 button.class = Button

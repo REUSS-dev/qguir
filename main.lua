@@ -5,7 +5,7 @@ function love.load()
     local gui = require("stellargui").hook()
     gui.loadExternalObjects()
 
-    local exampleA = gui.Button{x = "center", y = 100, w = 300, h = 200, text = "Я памятник себе воздвиг нерукотворный, к нему не зарастёт народная тропа", action = function() print("kurwo!!!") end, font = love.graphics.newFont("font.ttf", 16)}
+    exampleA = gui.Button{x = "center", y = 100, w = 300, h = 200, text = "Я памятник себе воздвиг нерукотворный, к нему не зарастёт народная тропа", action = function() print("kurwo!!!") end, font = love.graphics.newFont("font.ttf", 16)}
 
     local exampleB = gui.Button{x = "center", y = 400, color = {0.5,1,1}}
 
@@ -13,8 +13,12 @@ function love.load()
     gui.register(exampleB)
 end
 
+totaldt = 0
+
 function love.update(dt)
-    
+    totaldt = totaldt + dt*5
+
+    exampleA:move(50 + 50*math.cos(totaldt), 50 + 50*math.sin(totaldt))
 end
 
 function love.draw()
