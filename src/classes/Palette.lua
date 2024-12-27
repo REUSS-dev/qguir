@@ -11,6 +11,10 @@ local palette = {}
 
 -- config
 
+local darkerLighterMultiplier = 0.8
+
+-- consts
+
 ---@enum ColorNames
 local colorNames = {
     ---@see ColorIndex 1 - Main color
@@ -33,17 +37,27 @@ local colorNames = {
     hl = 3,
 }
 
--- consts
-
-
-
 -- vars
 
-
+local colorModifier_meta
 
 -- init
 
+colorModifier_meta = {}
 
+function colorModifier_meta.__index(self, index)
+    if index == "dark" or index == "darker" then
+        self.dark = {self[1] * darkerLighterMultiplier, self[2] * darkerLighterMultiplier, self[3] * darkerLighterMultiplier, self[4]}
+        self.darker = self.dark
+
+        return self.dark
+    elseif index == "bright" or index == "brighter" then
+        self.bright = {self[1] / darkerLighterMultiplier, self[2] / darkerLighterMultiplier, self[3] / darkerLighterMultiplier, self[4]}
+        self.brighter = self.bright
+
+        return self.bright
+    end
+end
 
 -- fnc
 
@@ -77,11 +91,13 @@ end
 ---@param index_or_name ColorNames|ColorIndex
 ---@param color ColorTable
 function Palette:setColor(index_or_name, color)
-    if type(index_or_name) == "string" then
-        self.container[colorNames[index_or_name]] = color
-    else
-        self.container[index_or_name] = color
+    local index = (type(index_or_name) == "string") and colorNames[index_or_name] or index_or_name
+
+    if color then
+        setmetatable(color, colorModifier_meta)
     end
+
+    self.container[index] = color
 end
 
 -- palette fnc
@@ -100,17 +116,17 @@ function palette.new(colors)
         return obj
     end
 
-    if type(colors[1]) == "number" then ---@diagnostic disable-next-line: assign-type-mismatch
-        obj.container[1] = colors
+    if type(colors[1]) == "number" then ---@diagnostic disable-next-line: param-type-mismatch
+        obj:setColor(1, colors)
         return obj
     end
 
     for key, color in pairs(colors) do
         if type(key) == "number" then
-            obj.container[key] = color
+            obj:setColor(key, color)
         elseif type(key) == "string" then
             if colorNames[key] then
-                obj.container[colorNames[key]] = color
+                obj:setColor(colorNames[key], color)
             end
         end
     end
