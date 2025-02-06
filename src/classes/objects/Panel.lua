@@ -1,7 +1,7 @@
 -- panel
 local panel = {}
 
-local composite = require("classes.CompositeObject")
+local uiobj = require("classes.ObjectUI")
 
 -- documentation
 
@@ -11,7 +11,12 @@ local composite = require("classes.CompositeObject")
 
 panel.name = "Panel"
 panel.aliases = {}
-panel.rules = {}
+panel.rules = {
+    {"sizeRectangular", {0, 0, 100, 50}},
+    {"position", {position = {"center", "center"}}},
+
+    {"palette", {color = {0, 0, 0, 0}}},
+}
 
 -- consts
 
@@ -31,16 +36,16 @@ panel.rules = {}
 
 -- classes
 
----@class Panel: CompositeObject
+---@class Panel: ObjectUI
 local Panel = {}
 local Panel_meta = {__index = Panel}
 
-setmetatable(Panel, {__index = composite.class}) -- Set parenthesis
+setmetatable(Panel, {__index = uiobj.class}) -- Set parenthesis
 
 -- panel fnc
 
 function panel.new(prototype)
-    local obj = composite.new(prototype)
+    local obj = uiobj.new(prototype)
     ---@cast obj Panel
 
     setmetatable(obj, Panel_meta)
