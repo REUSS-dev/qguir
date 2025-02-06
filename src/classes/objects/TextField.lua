@@ -19,6 +19,7 @@ textfield.rules = {
 
     {"palette", {color = {1, 1, 1, 1}, textColor = {0, 0, 0, 1}}},
 
+    {{"action", "enter", "return"}, "action", function() end},
     {{"text"}, "text", ""},
     {{"font"}, "font", love.graphics.getFont()},
     {{"oneline", "forceOneline", "force_oneline"}, "oneline", nil}
@@ -48,6 +49,7 @@ local TEXT_CARETTE_BLINK_PERIOD = 0.5
 ---@class TextField : ObjectUI
 ---@field text string
 ---@field font love.Font
+---@field action fun()
 ---@field textX number X text offset from TextField origin
 ---@field textY number Y text offset from TextField origin
 ---@field private caretteVisibility boolean
@@ -72,6 +74,11 @@ function TextField:getText()
     return self.text
 end
 
+function TextField:setText(text)
+    self.text = text
+    self:updateCarette()
+end
+
 function TextField:paint()
     love.graphics.setColor(self.palette[1])
     love.graphics.rectangle("fill", self.x, self.y, self.w, self.h)
@@ -90,7 +97,7 @@ end
 
 function TextField:keyPress(key)
     if key == "return" then
-        --self.action()
+        self.action()
         return true
     elseif key == "backspace" then
         if #self.text ~= 0 then
