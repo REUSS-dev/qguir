@@ -107,6 +107,7 @@ setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
 
 ---Generate crucial data for button text printing
 ---@param nullify boolean? Should the existing text cache be voided completely. Set to true, when button size or text itself changes. 
+---@private
 function Button:generateTextCache(nullify)
     if nullify then
         self.textCache = nil
@@ -148,7 +149,7 @@ end
 
 button.class = Button
 
--- button_legacy fnc
+-- button fnc
 
 function button.new(prototype)
     local obj = uiobj.new(prototype)
@@ -156,6 +157,7 @@ function button.new(prototype)
 
     setmetatable(obj, Button_meta)
 
+    ---@diagnostic disable-next-line: invisible
     obj:generateTextCache()
 
     return obj
