@@ -33,10 +33,6 @@ composite.rules = {}
 
 ---@class CompositeObject : ObjectUI
 ---@field objects ObjectUI[] List of UI objects inside the composite object
----@field hlObject ObjectUI|false UI object, that currently has focus out of all UI objects iside the composite object
----@field hlObjectBuffer ObjectUI|false UI object, that potentially can get focus after the call of onHover()
----@field clickObjectBuffer ObjectUI|false UI object, that will recieve clickRelease event call when the composite object receives it
----@field focusedObject ObjectUI|false UI object, that will recieve keyboard events when the composite object receives them
 local CompositeObject = {}
 local CompositeObject_meta = {__index = CompositeObject}
 
@@ -51,7 +47,7 @@ function CompositeObject:checkHover(x, y)
 
     local hlObject
 
-    for _, uiobject in pairs(self.objects) do
+    for _, uiobject in ipairs(self.objects) do
         hlObject = uiobject:isActive() and uiobject:checkHover(x, y) or hlObject
     end
 
@@ -59,38 +55,13 @@ function CompositeObject:checkHover(x, y)
         return false
     end
 
-    self.hlObjectBuffer = hlObject
-
-    return self
-end
-
----Promote buffered hlObject and trigger its hover-on callback when the composite UI object gains hover focus.
----@param x pixels Mouse X position in pixels
----@param y pixels Mouse Y position in pixels
-function CompositeObject:hoverOn(x, y)
-    self.hl = true
-
-    self.hlObject = self.hlObjectBuffer
-    self.hlObjectBuffer = false
-
-    return self.hlObject:hoverOn(x, y)
-end
-
----Clear hlObject and trigger its hover-off callback when the composite UI object loses hover focus.
----@param x pixels Mouse X position in pixels
----@param y pixels Mouse Y position in pixels
-function CompositeObject:hoverOff(x, y)
-    self.hl = false
-
-    self.hlObject:hoverOff(x, y)
-
-    self.hlObject = false
+    return hlObject
 end
 
 ---Tick all UI objects in a composite object.
 ---@param dt seconds
 function CompositeObject:tick(dt)
-    for _, uiobject in pairs(self.objects) do
+    for _, uiobject in ipairs(self.objects) do
         if uiobject:isActive() then
             uiobject:tick(dt)
         end
@@ -99,105 +70,11 @@ end
 
 ---Paint all UI objects in a composite object.
 function CompositeObject:paint()
-    for _, uiobject in pairs(self.objects) do
+    for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
             uiobject:paint()
+            print(uiobject.x)
         end
-    end
-end
-
----Perform click action on one of UI objects inside the composite object
----@param x pixels
----@param y pixels
----@param but number
-function CompositeObject:click(x, y, but)
-    if self.hlObject then
-        if self.hlObject:isInteractible() then
-            self.clickObjectBuffer = self.hlObject
-
-            if self.focusedObject ~= self.hlObject then
-                if self.focusedObject then
-                    self.focusedObject:loseFocus()
-                end
-
-                self.focusedObject = self.hlObject
-                self.focusedObject:gainFocus()
-            end
-
-            self.hlObject:click(x, y, but)
-        end
-    elseif self.focusedObject then
-        self.focusedObject:loseFocus()
-        self.focusedObject = nil
-    end
-end
-
----Perform click release action on one of UI objects inside the composite object
----@param x pixels
----@param y pixels
----@param but number
-function CompositeObject:clickRelease(x, y, but)
-    if self.clickObjectBuffer then
-
-        if self.clickObjectBuffer:isInteractible() then
-            if not self.clickObjectBuffer:clickRelease(x, y, but) then
-                self.clickObjectBuffer = false
-                return
-            end
-        end
-
-        if not self.hlObject then
-            self.clickObjectBuffer = false
-            return true
-        end
-
-        if (self.clickObjectBuffer == self.hlObject) or not self.hlObject:isInteractible() then
-            self.clickObjectBuffer = false
-            return
-        end
-
-        self.hlObject:clickReleaseExterior(x, y, but, self.clickObjectBuffer)
-
-        self.clickObjectBuffer = false
-    end
-end
-
-function CompositeObject:clickReleaseExterior(x, y, but, orig)
-    if self.hlObject and self.hlObject:isInteractible() then
-        self.hlObject:clickReleaseExterior(x, y, but, orig)
-    end
-end
-
-function CompositeObject:loseFocus()
-    if self.focusedObject then
-        self.focusedObject:loseFocus()
-        self.focusedObject = nil
-    end
-
-    self.focus = false
-end
-
-function CompositeObject:keyPress(key, scancode, isrepeat)
-    if self.focusedObject and self.focusedObject:isInteractible() then
-        if self.focusedObject:keyPress(key, scancode, isrepeat) then
-            self.focusedObject:loseFocus()
-            self.focusedObject = nil
-        end
-    end
-end
-
-function CompositeObject:keyRelease(key, scancode, isrepeat)
-    if self.focusedObject and self.focusedObject:isInteractible() then
-        if self.focusedObject:keyRelease(key, scancode, isrepeat) then
-            self.focusedObject:loseFocus()
-            self.focusedObject = nil
-        end
-    end
-end
-
-function CompositeObject:textinput(text)
-    if self.focusedObject and self.focusedObject:isInteractible() then
-        self.focusedObject:textinput(text)
     end
 end
 
@@ -215,11 +92,6 @@ function composite.new(prototype)
     ---@cast obj CompositeObject
 
     obj.objects = {}
-
-    obj.hlObject = false
-    obj.hlObjectBuffer = false
-    obj.clickObjectBuffer = false
-    obj.focusedObject = false
 
     setmetatable(obj, CompositeObject_meta)
 
