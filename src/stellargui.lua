@@ -286,7 +286,33 @@ end
 
 -- classes
 
+---UI objects meta-parent, UI state can be manipulated through this object. Meant to be singleton
+---@class StateUI : ObjectUI
+local StateUI = {}
 
+--Volunteerly revoke focus from self and optionally give it to another object.
+---@param origin ObjectUI
+---@param successor ObjectUI?
+function StateUI:revokeFocus(origin, successor)
+    if focusedObject == origin then
+        focusedObject:loseFocus()
+        
+        if successor and successor:isInteractible() then
+            focusedObject = successor
+            successor:gainFocus()
+        end
+    end
+end
+
+---Change current system cursor type
+---@param origin ObjectUI
+---@param type love.CursorType
+function StateUI:setCursor(origin, type)
+    if type ~= currentCursor then
+        currentCursor = type
+        love.mouse.setCursor(cursorStorage[type])
+    end
+end
 
 -- stellar fnc
 
@@ -295,6 +321,8 @@ end
 ---@return registeredIndex index Index of a registered UI object that it can be referenced by in other functions
 function stellar.register(uiobj)
     local newIndex = #registeredObjects+1
+
+    uiobj.parent = StateUI
 
     registeredAssociative[uiobj] = newIndex
     registeredObjects[newIndex] = uiobj
@@ -422,6 +450,8 @@ function stellar.hook()
     end
 
     love.keypressed = function (key, scancode, isrepeat)
+        keyp = key
+
         if focusedObject and focusedObject:isInteractible() then
             if focusedObject:keyPress(key, scancode, isrepeat) then
                 focusedObject:loseFocus()

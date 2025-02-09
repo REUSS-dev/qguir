@@ -73,10 +73,34 @@ function CompositeObject:paint()
     for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
             uiobject:paint()
-            print(uiobject.x)
         end
     end
 end
+
+---Add new object to composite object
+---@param obj ObjectUI
+function CompositeObject:add(obj)
+    obj.parent = self
+    self.objects[#self.objects+1] = obj
+end
+
+--#region Passthrough static functions
+
+---Volunteerly revoke focus from self and optionally give it to another object.
+---@param origin ObjectUI
+---@param successor ObjectUI?
+function CompositeObject:revokeFocus(origin, successor)
+    self.parent:revokeFocus(origin, successor)
+end
+
+---Change current system cursor type
+---@param origin ObjectUI
+---@param type love.CursorType
+function CompositeObject:setCursor(origin, type)
+    self.parent:setCursor(origin, type)
+end
+
+--#endregion
 
 setmetatable(CompositeObject, {__index = uiobj.class}) -- Set parenthesis
 

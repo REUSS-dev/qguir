@@ -42,6 +42,7 @@ uiobj.rules = {}
 ---@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
 ---@field protected palette Palette UI object color palette ( ---@todo temporary?)
+---@field protected parent CompositeObject|StateUI
 local ObjectUI = {}
 local ObjectUI_meta = {__index = ObjectUI}
 
@@ -242,11 +243,16 @@ function ObjectUI:loseFocus()
     self.focus = false
 end
 
+---Returns true if object has focus flag set, false otherwise
+---@return boolean
+function ObjectUI:hasFocus()
+    return self.focus
+end
+
 ---Perform key press action on UI object.<br>**This function is virtual and must be defined in a child class**
 ---@param key love.KeyConstant
 ---@param scancode love.Scancode
 ---@param isrepeat boolean
----@return boolean? revokeFocus Return **true**, if object voluntarily revokes its keyboard focus and directs key press processing to upper level.
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:keyPress(key, scancode, isrepeat)
 end
@@ -255,7 +261,6 @@ end
 ---@param key love.KeyConstant
 ---@param scancode love.Scancode
 ---@param isrepeat boolean
----@return boolean? revokeFocus Return **true**, if object voluntarily revokes its keyboard focus and directs key release processing to upper level.
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:keyRelease(key, scancode, isrepeat)
 end
@@ -265,6 +270,22 @@ end
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:textinput(text)
 end
+
+--#region Passthrough static functions
+
+---Volunteerly revoke focus from self and optionally give it to another object.
+---@param successor ObjectUI?
+function ObjectUI:revokeFocus(successor)
+    self.parent:revokeFocus(self, successor)
+end
+
+---Change current system cursor type
+---@param type love.CursorType
+function ObjectUI:setCursor(type)
+    self.parent:setCursor(self, type)
+end
+
+--#endregion
 
 uiobj.class = ObjectUI
 
