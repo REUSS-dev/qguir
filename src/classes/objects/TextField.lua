@@ -49,7 +49,7 @@ local TEXT_CARETTE_BLINK_PERIOD = 0.5
 ---@class TextField : ObjectUI
 ---@field text string
 ---@field font love.Font
----@field action fun()
+---@field action fun(self: TextField)
 ---@field textX number X text offset from TextField origin
 ---@field textY number Y text offset from TextField origin
 ---@field private caretteVisibility boolean
@@ -65,6 +65,7 @@ local TextField_meta = {__index = TextField}
 function TextField:updateCarette(noreset)
     if not noreset then
         self.caretteTimer = 0
+        self.caretteVisibility = self.focus and true
     end
 
     self.carettePosition = TEXT_OFFSET_LEFT + self.font:getWidth(self.text)
@@ -75,7 +76,7 @@ function TextField:getText()
 end
 
 function TextField:setText(text)
-    self.text = text
+    self.text = tostring(text)
     self:updateCarette()
 end
 
@@ -97,8 +98,7 @@ end
 
 function TextField:keyPress(key)
     if key == "return" then
-        self.action()
-        return true
+        self:action()
     elseif key == "backspace" then
         if #self.text ~= 0 then
             self.text = string.sub(self.text, 1, utf.offset(self.text, -1) - 1)
@@ -156,6 +156,8 @@ function textfield.new(prototype)
     local obj = uiobj.new(prototype)
 
     setmetatable(obj, TextField_meta)---@cast obj TextField
+
+    obj.text = tostring(obj.text)
 
     obj.textX = TEXT_OFFSET_LEFT
     obj.textY = TEXT_OFFSET_TOP
