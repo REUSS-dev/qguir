@@ -450,8 +450,6 @@ function stellar.hook()
     end
 
     love.keypressed = function (key, scancode, isrepeat)
-        keyp = key
-
         if focusedObject and focusedObject:isInteractible() then
             if focusedObject:keyPress(key, scancode, isrepeat) then
                 focusedObject:loseFocus()

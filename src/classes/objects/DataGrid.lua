@@ -84,6 +84,8 @@ datagrid.rules = {
 ---@field gridSize {[1]: integer, [2]: integer} DataGrid resolution in {Columns, Lines}
 ---@field cellSize {[1]: number, [2]: number} Cell size in pixels[2]
 ---@field table table<integer, table<integer, (string|number)?>> 2D-array of datagrid contents
+---@field ow integer Original width
+---@field oh integer Original height
 ---@field parent DataGrid
 local DataPlain = {}
 local DataPlain_meta = {__index = DataPlain}
@@ -100,7 +102,8 @@ function DataPlain:paint()
 
             if self.table[column + 1][row + 1] then
                 love.graphics.setColor(self.palette[2])
-                love.graphics.print(self.table[column + 1][row + 1], self.x + column * self.cellSize[1] + TEXT_OFFSET_LEFT, self.y + row * self.cellSize[2] + TEXT_OFFSET_TOP)
+                love.graphics.setFont(self.font)
+                love.graphics.printf(self.table[column + 1][row + 1], self.x + column * self.cellSize[1] + TEXT_OFFSET_LEFT, self.y + row * self.cellSize[2] + TEXT_OFFSET_TOP, self.cellSize[1] - 2*TEXT_OFFSET_LEFT, "center")
             end
         end
     end
@@ -111,7 +114,7 @@ function DataPlain:click(x, y, _)
         self.parent:endEdit()
     end
 
-    local insideX, insideY = x - self.x, y - self.y
+    local insideX, insideY = x + 1 - self.x, y + 1 - self.y
     local clickedColumn, clickedRow = math.ceil(insideX/self.cellSize[1]), math.ceil(insideY/self.cellSize[2])
 
     self.parent:selectCell(clickedColumn, clickedRow)
@@ -144,6 +147,8 @@ end
 local function newDataPlain(prototype)
     local obj = uiobj.new(prototype)
     setmetatable(obj, DataPlain_meta)---@cast obj DataPlain
+
+    obj.ow, obj.oh = obj.w, obj.h
 
     return obj
 end
@@ -189,6 +194,11 @@ end
 function DataGridTextField:loseFocus()
     textfield.class.loseFocus(self)
     self:setCursor("arrow")
+
+    if self.parent.editedCell then
+        self.parent:endEdit()
+    end
+
     self:hide()
 end
 
@@ -252,7 +262,7 @@ function DataGrid:selectCell(column, row)
     self.editedCell = {column, row}
 
     self.editTextField:move(self.x + (column - 1)*self.gridDataPlain.cellSize[1], self.y + (row - 1)*self.gridDataPlain.cellSize[2])
-    self.editTextField:setText(self.gridDataPlain.table[column][row])
+    self.editTextField:setText(self.gridDataPlain.table[column][row] or "")
     self.editTextField:show()
 end
 
@@ -267,6 +277,27 @@ end
 
 function DataGrid:set(column, row, content)
     self.gridDataPlain.table[column][row] = content
+end
+
+function DataGrid:resize(columns, rows)
+    self:endEdit(true)
+    if columns > self.gridDataPlain.gridSize[1] then
+        for i = self.gridDataPlain.gridSize[1] + 1, columns do
+            self.gridDataPlain.table[i] = {}
+        end
+    end
+
+    if rows > self.gridDataPlain.gridSize[2] then
+        for i = 1, self.gridDataPlain.gridSize[1] do
+            self.gridDataPlain.table[i][rows] = nil
+        end
+    end
+
+    self.gridDataPlain.gridSize = {columns, rows}
+
+    self.gridDataPlain.cellSize = {math.floor(self.gridDataPlain.ow/columns), math.floor(self.gridDataPlain.oh/rows)}
+    self.editTextField.w = self.gridDataPlain.cellSize[1]
+    self.editTextField.h = self.gridDataPlain.cellSize[2]
 end
 
 -- textfield fnc

@@ -15,7 +15,7 @@ function love.load()
 И славен буду я, доколь в подлунном мире\
 Жив будет хоть один пиит.", action = function() print("kurwo!!!") end, font = love.graphics.newFont("font.ttf", 16)}
 
-    local exampleB = gui.DataGrid{x = "center", y = 400, font = love.graphics.newFont("font.ttf", 16)}
+    exampleB = gui.DataGrid{x = "center", y = 50, font = love.graphics.newFont("font.ttf", 16), w = 350, h = 350}
 
     for i = 1, 5 do
         for j = 1, 5 do
@@ -23,6 +23,7 @@ function love.load()
         end
     end
 
+    exampleA:hide()
     gui.register(exampleA)
     gui.register(exampleB)
 end
@@ -36,6 +37,13 @@ function love.update(dt)
 end
 
 function love.draw()
-    love.graphics.setColor(1,1,1, 1)
-    love.graphics.print(keyp or "", 300, 380)
+
+end
+
+function love.keypressed(key)
+    if key == "a" then
+        exampleB:resize(exampleB.gridDataPlain.gridSize[1] - 1, exampleB.gridDataPlain.gridSize[1] - 1)
+    elseif key == "s" then
+        exampleB:resize(exampleB.gridDataPlain.gridSize[1] + 1, exampleB.gridDataPlain.gridSize[1] + 1)
+    end
 end
