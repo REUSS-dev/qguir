@@ -1,9 +1,11 @@
+local gui
+
 function love.load()
     io.stdout:setvbuf("no")
     love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";src/?.lua")
     love.keyboard.setKeyRepeat(true)
 
-    local gui = require("stellargui").hook()
+    gui = require("stellargui").hook()
     gui.loadExternalObjects()
 
     exampleA = gui.Button{x = "center", y = 100, w = 300, h = 200, text = "Я памятник себе воздвиг нерукотворный,\
@@ -16,12 +18,6 @@ function love.load()
 Жив будет хоть один пиит.", action = function() print("kurwo!!!") end, font = love.graphics.newFont("font.ttf", 16)}
 
     exampleB = gui.DataGrid{x = "center", y = 50, font = love.graphics.newFont("font.ttf", 16), w = 350, h = 350}
-
-    for i = 1, 5 do
-        for j = 1, 5 do
-            exampleB:set(i, j, math.random(1, 100))
-        end
-    end
 
     exampleA:hide()
     gui.register(exampleA)
@@ -37,7 +33,7 @@ function love.update(dt)
 end
 
 function love.draw()
-
+    gui.drawMousePosition()
 end
 
 function love.keypressed(key)

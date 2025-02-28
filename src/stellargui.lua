@@ -114,13 +114,13 @@ end
 
 ---Standard draw function for the functionality of StellarGUI
 local function stellar_draw()
-love.graphics.push("transform")
+    love.graphics.push("transform")
 
     for _, registered in pairs(registeredObjects) do
         if registered:isDrawn() then
-love.graphics.translate(registered:getTranslation())
+            love.graphics.translate(registered:getTranslation())
             registered:paint()
-love.graphics.origin()
+            love.graphics.origin()
         end
     end
 
@@ -394,6 +394,22 @@ function stellar.loadExternalObjects(path)
         stellar.loadExternalObjects(path .. "/" .. item)
     end
 end
+
+--#region Debug functions
+
+function stellar.drawMousePosition()
+    love.graphics.setColor(
+        love.mouse.isDown(1) and {0, 0, 1, 1} or 
+        love.mouse.isDown(2) and {1, 0, 0, 1} or 
+        love.mouse.isDown(3) and {0, 1, 0, 1} or
+        love.mouse.isDown(4, 5, 6) and {1, 1, 0, 1} or
+        {1, 1, 1, 1}
+    )
+
+    love.graphics.print(love.mouse.getX() .. "; " .. love.mouse.getY(), 0, 0)
+end
+
+--#endregion
 
 --- Stellar hook
 
