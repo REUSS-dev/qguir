@@ -48,7 +48,7 @@ button.rules = {
 ---@field textCache table Set of data for printing button text. WARNING: This should be nullified on button size/text change.
 ---@field text string
 ---@field font love.Font
-local Button = {}
+local Button = { defaultCursor = "hand" }
 local Button_meta = {__index = Button}
 
 function Button:paint()
@@ -68,12 +68,6 @@ function Button:paint()
     love.graphics.setColor(self.palette[2])
     love.graphics.setFont(self.font)
     love.graphics.printf(self.textCache.textVisual, 0, self.textCache.y, self.w, "center")
-end
-
-function Button:hoverOn(x, y)
-    uiobj.class.hoverOn(self, x, y)
-
-    return "hand"
 end
 
 function Button:click(_, _, but)

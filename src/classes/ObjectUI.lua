@@ -42,7 +42,8 @@ uiobj.rules = {}
 ---@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
 ---@field protected palette Palette UI object color palette ( ---@todo temporary?)
----@field protected parent CompositeObject|StateUI
+---@field protected parent CompositeObject|StateUI UI object parent (StateUI object of stellarapi, if born manually, or parenting CompositeObject)
+---@field protected defaultCursor (love.Cursor|string)? Optional parameter. Cursor set when hoverOn of UI object triggers
 local ObjectUI = {}
 local ObjectUI_meta = {__index = ObjectUI}
 
@@ -190,6 +191,8 @@ end
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:hoverOn(x, y)
     self.hl = true
+
+    return self.defaultCursor
 end
 
 ---Trigger hover-off callback when the UI object loses hover focus

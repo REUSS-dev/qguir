@@ -57,7 +57,7 @@ local TEXT_CARETTE_BLINK_PERIOD = 0.5
 ---@field private carettePosition number Carette X position. Is counted from object origin, must be padded by TEXT_OFFSET_LEFT to be correctly set
 ---@field lineHeight number To be PRIVATED
 ---@field oneline boolean To be PRIVATED
-local TextField = {}
+local TextField = { defaultCursor = "ibeam" }
 local TextField_meta = {__index = TextField}
 
 ---Update carette position
@@ -122,12 +122,6 @@ function TextField:tick(dt)
             self.caretteVisibility = not self.caretteVisibility
         end
     end
-end
-
-function TextField:hoverOn(x, y)
-    uiobj.class.hoverOn(self, x, y)
-
-    return "ibeam"
 end
 
 function TextField:gainFocus()
