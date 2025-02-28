@@ -138,6 +138,13 @@ function ObjectUI:getY()
     return self.y
 end
 
+---Returns translation for the UI object. Usable when passing output to love.graphics.translate()<br>Behavior of this method is altered in CompositeObject!
+---@return pixels X coordinate of the object
+---@return pixels Y coordinate of the object
+function ObjectUI:getTranslation()
+    return self.x, self.y
+end
+
 ---Sets the new position of the UI object.
 ---@param newX pixels New position of the UI object on an X-axis
 ---@param newY pixels New position of the UI object on a Y-axis

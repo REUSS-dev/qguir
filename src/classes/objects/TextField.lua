@@ -82,17 +82,17 @@ end
 
 function TextField:paint()
     love.graphics.setColor(self.palette[1])
-    love.graphics.rectangle("fill", self.x, self.y, self.w, self.h)
+    love.graphics.rectangle("fill", 0, 0, self.w, self.h)
 
     love.graphics.setColor(self.palette[3])
-    love.graphics.rectangle("line", self.x, self.y, self.w, self.h)
+    love.graphics.rectangle("line", 0, 0, self.w, self.h)
 
     love.graphics.setColor(self.palette[2])
     love.graphics.setFont(self.font)
-    love.graphics.print(self.text, self.x + self.textX, self.y + self.textY)
+    love.graphics.print(self.text, self.textX, self.textY)
 
     if self.caretteVisibility then
-        love.graphics.rectangle("fill", self.x + self.carettePosition, self.y + self.textY, 1, self.lineHeight)
+        love.graphics.rectangle("fill", self.carettePosition, self.textY, 1, self.lineHeight)
     end
 end
 

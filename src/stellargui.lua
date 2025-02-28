@@ -114,11 +114,17 @@ end
 
 ---Standard draw function for the functionality of StellarGUI
 local function stellar_draw()
+love.graphics.push("transform")
+
     for _, registered in pairs(registeredObjects) do
         if registered:isDrawn() then
+love.graphics.translate(registered:getTranslation())
             registered:paint()
+love.graphics.origin()
         end
     end
+
+    love.graphics.pop()
 end
 
 --#region Parsers collection

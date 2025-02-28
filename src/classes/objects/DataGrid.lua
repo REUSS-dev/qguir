@@ -95,15 +95,15 @@ function DataPlain:paint()
     for column = 0, self.gridSize[1] - 1 do
         for row = 0, self.gridSize[2] - 1 do
             love.graphics.setColor(self.palette[1])
-            love.graphics.rectangle("fill", self.x + column * self.cellSize[1], self.y + row * self.cellSize[2], self.cellSize[1], self.cellSize[2])
+            love.graphics.rectangle("fill", column * self.cellSize[1], row * self.cellSize[2], self.cellSize[1], self.cellSize[2])
 
             love.graphics.setColor(self.palette[3])
-            love.graphics.rectangle("line", self.x + column * self.cellSize[1], self.y + row * self.cellSize[2], self.cellSize[1], self.cellSize[2])
+            love.graphics.rectangle("line", column * self.cellSize[1], row * self.cellSize[2], self.cellSize[1], self.cellSize[2])
 
             if self.table[column + 1][row + 1] then
                 love.graphics.setColor(self.palette[2])
                 love.graphics.setFont(self.font)
-                love.graphics.printf(self.table[column + 1][row + 1], self.x + column * self.cellSize[1] + TEXT_OFFSET_LEFT, self.y + row * self.cellSize[2] + TEXT_OFFSET_TOP, self.cellSize[1] - 2*TEXT_OFFSET_LEFT, "center")
+                love.graphics.printf(self.table[column + 1][row + 1], column * self.cellSize[1] + TEXT_OFFSET_LEFT, row * self.cellSize[2] + TEXT_OFFSET_TOP, self.cellSize[1] - 2*TEXT_OFFSET_LEFT, "center")
             end
         end
     end
@@ -148,7 +148,7 @@ local function newDataPlain(prototype)
     local obj = uiobj.new(prototype)
     setmetatable(obj, DataPlain_meta)---@cast obj DataPlain
 
-    obj.ow, obj.oh = obj.w, obj.h
+    obj.ow, obj.oh = obj:getResolution()
 
     return obj
 end

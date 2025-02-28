@@ -58,6 +58,10 @@ function CompositeObject:checkHover(x, y)
     return hlObject
 end
 
+function CompositeObject:getTranslation()
+    return 0, 0
+end
+
 ---Tick all UI objects in a composite object.
 ---@param dt seconds
 function CompositeObject:tick(dt)
@@ -72,7 +76,9 @@ end
 function CompositeObject:paint()
     for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
+            love.graphics.translate(uiobject:getTranslation())
             uiobject:paint()
+            love.graphics.origin()
         end
     end
 end

@@ -60,14 +60,14 @@ function Button:paint()
         love.graphics.setColor(self.palette[1])
     end
     
-    love.graphics.rectangle("fill", self.x, self.y, self.w, self.h)
+    love.graphics.rectangle("fill", 0, 0, self.w, self.h)
 
     love.graphics.setColor(self.palette[3])
-    love.graphics.rectangle("line", self.x, self.y, self.w, self.h)
+    love.graphics.rectangle("line", 0, 0, self.w, self.h)
 
     love.graphics.setColor(self.palette[2])
     love.graphics.setFont(self.font)
-    love.graphics.printf(self.textCache.textVisual, self.x, self.textCache.y, self.w, "center")
+    love.graphics.printf(self.textCache.textVisual, 0, self.textCache.y, self.w, "center")
 end
 
 function Button:hoverOn(x, y)
@@ -114,7 +114,7 @@ function Button:generateTextCache(nullify)
     end
 
     if self.textCache then
-        self.textCache.y = math.floor(self.y + self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
+        self.textCache.y = math.floor(self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
         return
     end
 
@@ -144,7 +144,7 @@ function Button:generateTextCache(nullify)
         self.textCache.textLines = allowedLines
     end
 
-    self.textCache.y = math.floor(self.y + self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
+    self.textCache.y = math.floor(self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
 end
 
 button.class = Button
