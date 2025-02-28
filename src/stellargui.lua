@@ -1,6 +1,8 @@
 -- stellar
 local stellar = {}
 
+local ffi          = require("ffi")
+
 local paletteClass = require("classes.Palette")
 
 -- documentation
@@ -31,11 +33,15 @@ local externalTypesDir = "src/classes/objects"
 local PATTERN_FILENAME = "[^\\/]+$"
 
 local DEFAULT_CURSOR = "arrow"
+local DEFAULT_DOUBLE_CLICK_TIME = 0.5
 
 -- vars
 
----@todo переименовать. Таблица с дескрипторами типов объектов
-local objects = {}                  ---@type table<string, ObjectDescriptor>
+local currentCursor = DEFAULT_CURSOR ---@type love.CursorType
+local doubleClickTime = DEFAULT_DOUBLE_CLICK_TIME
+
+
+local object_descriptors = {}       ---@type table<string, ObjectDescriptor>
 local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
 local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cursor}
 
@@ -46,20 +52,21 @@ local currentHl                     ---@type ObjectUI [TODO-1] May be implemente
 local heldObject                    ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
 local focusedObject                 ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
 
-local currentCursor = DEFAULT_CURSOR ---@type love.CursorType
+-- Double click detection
+local lastClickTime, lastClickButton, lastClickPosition, lastClickedObject = 0, 0, {-1, -1}, nil
 
 -- init
 
-setmetatable(registeredAssociative, {__mode = 'k'})
-
---local love = love ---@todo удалить?
+local love = love -- НЕ УДАЛЯТЬ. Предотвращает варнинги в других местах, где объявляются коллбеки love
 local nopFunc = function() end
 local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc
 
+setmetatable(registeredAssociative, {__mode = 'k'})
+
 setmetatable(stellar, {
     __index = function (self, key)
-        if objects[key] then
-            return objects[key].construct
+        if object_descriptors[key] then
+            return object_descriptors[key].construct
         end
     end
 })
@@ -70,6 +77,16 @@ setmetatable(cursorStorage, {
         return self[key]
     end
 })
+
+--- Figuring out the doubleclick time in windows
+
+if love.system.getOS() == "Windows" then
+    ffi.cdef[[
+        uint32_t GetDoubleClickTime();
+    ]]
+    
+    doubleClickTime = ffi.C.GetDoubleClickTime() / 1000
+end
 
 -- fnc
 
@@ -279,11 +296,11 @@ local function registerType(typeDescriptor)
         return typeDescriptor.new(prototype)
     end
 
-    objects[typeDescriptor.name] = typeDescriptor
+    object_descriptors[typeDescriptor.name] = typeDescriptor
 
     if typeDescriptor.aliases then
         for _, alias in ipairs(typeDescriptor.aliases) do
-            objects[alias] = typeDescriptor
+            object_descriptors[alias] = typeDescriptor
         end        
     end
 
@@ -443,6 +460,20 @@ function stellar.hook()
                 end
 
                 currentHl:click(x, y, but)
+
+                -- Double click shenanigans
+                if
+                    love.timer.getTime() - lastClickTime <= doubleClickTime and 
+                    but == lastClickButton and
+                    lastClickedObject == currentHl and
+                    x == lastClickPosition[1] and y == lastClickPosition[2]
+                then
+                    currentHl:doubleClick(x, y, but)
+                    lastClickTime = 0 -- avoid counting possible third click as double click
+                    return
+                end
+
+                lastClickButton, lastClickTime, lastClickPosition[1], lastClickPosition[2], lastClickedObject = but, love.timer.getTime(), x, y, currentHl
             end
         else
             if focusedObject then

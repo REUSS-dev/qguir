@@ -225,6 +225,14 @@ end
 function ObjectUI:click(x, y, but)
 end
 
+---Perform double click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@param but number
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:doubleClick(x, y, but)
+end
+
 ---Perform click release action on UI object<br>**This function is virtual and must be defined in a child class**
 ---@param x pixels
 ---@param y pixels
