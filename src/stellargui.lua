@@ -48,9 +48,9 @@ local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cur
 local registeredObjects = {}        ---@type {[registeredIndex]: ObjectUI} Currently registered objects in the system that are eligible for update and draw.
 local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Associative array of registered objects used to get registration index by object reference
 
-local currentHl                     ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
-local heldObject                    ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
-local focusedObject                 ---@type ObjectUI [TODO-1] May be implemented as one-value ephemeron to provide consistent object cleaning. Not needed currently, deleted objects do not update and their references in this variable are getting replaced soon anyway
+local currentHl                     ---@type ObjectUI UI object mouse cursor currently on
+local heldObject = {}               ---@type ObjectUI UI object last mousepressed event was on (table element for every mouse button)
+local focusedObject                 ---@type ObjectUI UI object that currently has keyboard focus
 
 -- Double click detection
 local lastClickTime, lastClickButton, lastClickPosition, lastClickedObject = 0, 0, {-1, -1}, nil
@@ -448,7 +448,7 @@ function stellar.hook()
     love.mousepressed = function (x, y, but)
         if currentHl then
             if currentHl:isInteractible() then
-                heldObject = currentHl
+                heldObject[but] = currentHl
 
                 if focusedObject ~= currentHl then
                     if focusedObject then
@@ -486,19 +486,19 @@ function stellar.hook()
     end
 
     love.mousereleased = function (x, y, but)
-        if heldObject then
+        if heldObject[but] then
 
-            if heldObject:isInteractible() then
-                if not heldObject:clickRelease(x, y, but) then
-                    heldObject = nil
+            if heldObject[but]:isInteractible() then
+                if not heldObject[but]:clickRelease(x, y, but) then
+                    heldObject[but] = nil
                     return
                 end
             end
 
-            if currentHl and (heldObject ~= currentHl) and currentHl:isInteractible() then
-                currentHl:clickReleaseExterior(x, y, but, heldObject)
+            if currentHl and (heldObject[but] ~= currentHl) and currentHl:isInteractible() then
+                currentHl:clickReleaseExterior(x, y, but, heldObject[but])
 
-                heldObject = nil
+                heldObject[but] = nil
                 return
             end
         else
