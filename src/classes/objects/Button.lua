@@ -43,15 +43,17 @@ button.rules = {
 -- classes
 
 ---@class Button : ObjectUI
----@field held boolean
----@field action fun()
+---@field held boolean Flag if button is currently held (Left mouse button) by user
+---@field action fun() Button action callback. Triggers ONLY when user presses and releases LMB on button object
 ---@field textCache table Set of data for printing button text. WARNING: This should be nullified on button size/text change.
----@field text string
----@field font love.Font
+---@field text string Button text
+---@field font love.Font Button text font
 local Button = { defaultCursor = "hand" }
 local Button_meta = {__index = Button}
+setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
 
 function Button:paint()
+    -- Inside fill
     if self.held then
         love.graphics.setColor(self.palette[1].darker)
     elseif self.hl then
@@ -62,9 +64,11 @@ function Button:paint()
     
     love.graphics.rectangle("fill", 0, 0, self.w, self.h)
 
+    -- Border
     love.graphics.setColor(self.palette[3])
     love.graphics.rectangle("line", 0, 0, self.w, self.h)
 
+    -- Text
     love.graphics.setColor(self.palette[2])
     love.graphics.setFont(self.font)
     love.graphics.printf(self.textCache.textVisual, 0, self.textCache.y, self.w, "center")
@@ -87,58 +91,40 @@ function Button:clickRelease(x, y, but)
 end
 
 function Button:keyPress(key)
+    -- Also trigger button action when button has focus and Return hit
     if key == "return" then
         self.action()
     end
 end
 
-function Button:move(x, y)
-    uiobj.class.move(self, math.floor(x), math.floor(y))
-    self:generateTextCache()
-end
-
-setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
-
----Generate crucial data for button text printing
----@param nullify boolean? Should the existing text cache be voided completely. Set to true, when button size or text itself changes. 
+---Regenerate crucial data for button text printing
 ---@private
-function Button:generateTextCache(nullify)
-    if nullify then
-        self.textCache = nil
-    end
-
-    if self.textCache then
-        self.textCache.y = math.floor(self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
-        return
-    end
-
+function Button:generateTextCache()
     self.textCache = {}
-    
-    self.textCache.fontHeight = self.font:getHeight()
-    local _, lines = self.font:getWrap(self.text, self.w)
 
-    local allowedLines = math.floor(self.h/self.textCache.fontHeight)
+    local fontHeight = self.font:getHeight()
+    local allowedLines = math.floor(self.h/fontHeight)
+
+    local _, wrapped_lines = self.font:getWrap(self.text, self.w)
+
+    self.textCache.y = math.floor((self.h - fontHeight * math.min(#wrapped_lines, allowedLines)) / 2)
 
     if allowedLines == 0 then
         self.textCache.textVisual = "?"
-        self.textCache.textLines = 0
-    elseif #lines <= allowedLines then
+    elseif #wrapped_lines <= allowedLines then
         self.textCache.textVisual = self.text
-        self.textCache.textLines = #lines
-    else
+    else -- text has more lines than allowed
         local tocut = self.text
 
+        -- cut text progressively from end until it is possible to fit it 
         repeat
             tocut = string.sub(tocut, 1, utf.offset(tocut, -1) - 1)
 
-            local _, nlines = self.font:getWrap(tocut .. "..", self.w)
-        until #nlines <= allowedLines
+            local _, cutlines = self.font:getWrap(tocut .. "..", self.w)
+        until #cutlines <= allowedLines
     
         self.textCache.textVisual = tocut .. ".."
-        self.textCache.textLines = allowedLines
     end
-
-    self.textCache.y = math.floor(self.h/2 - self.textCache.fontHeight*self.textCache.textLines/2)
 end
 
 button.class = Button
