@@ -1,7 +1,13 @@
 -- stellar
 local stellar = {}
 
-local ffi          = require("ffi")
+print((...):match("^(.*%.?[^.]+)$"):gsub("%.", "/"))
+
+local selfpath = (...):match("^(.*%.?[^.]+)$"):gsub("%.", "/")
+love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. love.filesystem.getRequirePath():gsub("(%?%.lua)", selfpath .. "/%1"))
+print(love.filesystem.getRequirePath())
+
+local ffi = require("ffi")
 
 local paletteClass = require("classes.Palette")
 
@@ -26,7 +32,7 @@ local paletteClass = require("classes.Palette")
 
 -- config
 
-local externalTypesDir = "src/classes/objects"
+local externalTypesDir = selfpath .. "/classes/objects"
 
 -- consts
 
@@ -420,9 +426,9 @@ end
 
 function stellar.drawMousePosition()
     love.graphics.setColor(
-        love.mouse.isDown(1) and {0, 0, 1, 1} or 
-        love.mouse.isDown(2) and {1, 0, 0, 1} or 
-        love.mouse.isDown(3) and {0, 1, 0, 1} or
+        love.mouse.isDown(1) and {0.3, 0.3, 1, 1} or 
+        love.mouse.isDown(2) and {1, 0.3, 0.3, 1} or 
+        love.mouse.isDown(3) and {0.3, 1, 0.3, 1} or
         love.mouse.isDown(4, 5, 6) and {1, 1, 0, 1} or
         {1, 1, 1, 1}
     )

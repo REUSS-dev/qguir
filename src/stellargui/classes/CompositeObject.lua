@@ -58,6 +58,9 @@ function CompositeObject:checkHover(x, y)
     return hlObject
 end
 
+---CompositeObject must return (0, 0) as its transform to let its encapsulated objects transform correctly
+---@return pixels
+---@return pixels
 function CompositeObject:getTranslation()
     return 0, 0
 end
@@ -118,8 +121,7 @@ composite.class = CompositeObject
 ---@param prototype ObjectPrototype
 ---@return CompositeObject
 function composite.new(prototype)
-    local obj = uiobj.new(prototype)
-    ---@cast obj CompositeObject
+    local obj = uiobj.new(prototype) ---@cast obj CompositeObject
 
     obj.objects = {}
 
