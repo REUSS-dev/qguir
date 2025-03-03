@@ -58,6 +58,8 @@ local currentHl                     ---@type ObjectUI UI object mouse cursor cur
 local heldObject = {}               ---@type ObjectUI UI object last mousepressed event was on (table element for every mouse button)
 local focusedObject                 ---@type ObjectUI UI object that currently has keyboard focus
 
+local hooked
+
 -- Double click detection
 local lastClickTime, lastClickButton, lastClickPosition, lastClickedObject = 0, 0, {-1, -1}, nil
 
@@ -339,8 +341,10 @@ end
 
 ---Change current system cursor type
 ---@param origin ObjectUI
----@param type love.CursorType
+---@param type love.CursorType?
 function StateUI:setCursor(origin, type)
+    type = type or DEFAULT_CURSOR
+
     if type ~= currentCursor then
         currentCursor = type
         love.mouse.setCursor(cursorStorage[type])
@@ -454,7 +458,11 @@ end
 
 --- Stellar hook
 
-function stellar.hook()
+function stellar.hook(force)
+    if hooked and not force then
+        return stellar
+    end
+
     love.update = function(dt)
         love_update(dt)
         stellar_update(dt)
@@ -555,6 +563,8 @@ function stellar.hook()
             love_textinput(text)
         end
     end
+
+    hooked = true
 
     return stellar
 end
