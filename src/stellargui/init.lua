@@ -67,7 +67,6 @@ local lastClickTime, lastClickButton, lastClickPosition, lastClickedObject = 0, 
 
 local love = love -- НЕ УДАЛЯТЬ. Предотвращает варнинги в других местах, где объявляются коллбеки love
 local nopFunc = function() end
-local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc
 
 setmetatable(registeredAssociative, {__mode = 'k'})
 
@@ -462,6 +461,8 @@ function stellar.hook(force)
     if hooked and not force then
         return stellar
     end
+    
+    local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc
 
     love.update = function(dt)
         love_update(dt)
