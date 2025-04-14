@@ -87,6 +87,9 @@ function TextField:paint()
     love.graphics.setColor(self.palette[3])
     love.graphics.rectangle("line", 0, 0, self.w, self.h)
 
+    love.graphics.stencil(self.stencil, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+
     love.graphics.setColor(self.palette[2])
     love.graphics.setFont(self.font)
     love.graphics.print(self.text, self.textX, self.textY)
@@ -94,6 +97,8 @@ function TextField:paint()
     if self.caretteVisibility then
         love.graphics.rectangle("fill", self.carettePosition, self.textY, 1, self.lineHeight)
     end
+
+    love.graphics.setStencilTest()
 end
 
 function TextField:keyPress(key)
@@ -155,6 +160,8 @@ function textfield.new(prototype)
 
     obj.textX = TEXT_OFFSET_LEFT
     obj.textY = TEXT_OFFSET_TOP
+    obj.textareaW = obj.w - obj.textX * 2
+    obj.textareaH = obj.h - obj.textY * 2
 
     obj.lineHeight = obj.font:getHeight()
     obj:updateCarette()
@@ -168,6 +175,10 @@ function textfield.new(prototype)
 
     if obj.oneline then
         obj.textY = math.floor(obj:getHeight()/2 - obj.lineHeight/2)
+    end
+
+    obj.stencil = function()
+        love.graphics.rectangle("fill", obj.textX, obj.textY, obj.textareaW, obj.txtareaH)
     end
 
     return obj
