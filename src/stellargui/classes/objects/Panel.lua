@@ -38,6 +38,7 @@ panel.rules = {
 -- classes
 
 ---@class Panel: ObjectUI
+---@field r number Radius of round corner
 local Panel = {}
 local Panel_meta = {__index = Panel}
 setmetatable(Panel, {__index = uiobj.class}) -- Set parenthesis
