@@ -350,6 +350,12 @@ function StateUI:setCursor(origin, type)
     end
 end
 
+---Volunteerly unregister origin object
+---@param origin ObjectUI
+function StateUI:unregisterMyself(origin)
+    stellar.unregister(origin)
+end
+
 -- stellar fnc
 
 ---Register the UI object descriptor in a system for update and draw
@@ -404,12 +410,14 @@ end
 function stellar.loadExternalObjects(path)
     local path = path or externalTypesDir
 
-    if not love.filesystem.exists(path) then
+    local path_info = love.filesystem.getInfo(path)
+
+    if not path_info then
         print(string.format("Failed loading object from %s. Path does not exist", path))
         return
     end
 
-    if love.filesystem.isFile(path) then
+    if path_info.type == "file" then
         local objectFileChunk = love.filesystem.load(path)
 
         if not objectFileChunk then
