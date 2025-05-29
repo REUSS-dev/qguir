@@ -103,6 +103,16 @@ function CompositeObject:add(obj)
     self.objects[#self.objects+1] = obj
 end
 
+function CompositeObject:remove(to_remove)
+    for i, obj in ipairs(self.objects) do
+        if obj == to_remove then
+            obj:unregister()
+            table.remove(self.objects, i)
+            return
+        end
+    end
+end
+
 --#region Passthrough static functions
 
 ---Volunteerly revoke focus from self and optionally give it to another object.
