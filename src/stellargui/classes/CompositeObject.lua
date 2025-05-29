@@ -75,6 +75,20 @@ function CompositeObject:unregister(message)
     return halt
 end
 
+---Hide all objects im a composite
+function CompositeObject:hide()
+    for _, uiobject in ipairs(self.objects) do
+        uiobject:hide()
+    end
+end
+
+---Show all objects im a composite
+function CompositeObject:show()
+    for _, uiobject in ipairs(self.objects) do
+        uiobject:show()
+    end
+end
+
 ---Tick all UI objects in a composite object.
 ---@param dt seconds
 function CompositeObject:tick(dt)
