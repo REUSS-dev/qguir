@@ -18,13 +18,15 @@ textfield.rules = {
     {"sizeRectangular", {0, 0, 100, 50}},
     {"position", {position = {"center", "center"}}},
 
-    {"palette", {color = {1, 1, 1, 1}, textColor = {0, 0, 0, 1}}},
+    {"palette", {color = {1, 1, 1, 1}, textColor = {0, 0, 0, 1}, additionalColor = {0.5, 0.5, 0.5, 1}}},
 
     {{"action", "enter", "return"}, "action", function() end},
     {{"text"}, "text", ""},
+    {{"placeholder", "default", "defaultText"}, "placeholder", ""},
     {{"font"}, "font", love.graphics.getFont()},
     {{"oneline", "forceOneline", "force_oneline"}, "oneline", nil},
-    {{"r", "radius", "rounding", "round"}, "r", nil}
+    {{"r", "radius", "rounding", "round"}, "r", nil},
+    {{"password"}, "password", false}
 }
 
 -- consts
@@ -35,6 +37,8 @@ local TEXT_OFFSET_TOP = 5
 local TEXT_CARETTE_BLINK_PERIOD = 0.5
 
 local PROTECT_NEWLINE_SYMBOL = "\x0C"
+
+local PASSWORD_CHAR = "*"
 
 -- vars
 
@@ -94,6 +98,8 @@ end
 ---@field oneline boolean To be PRIVATED
 ---@field display TextFieldDisplayTable Display parameters and cache
 ---@field r number Radius of round corner
+---@field password boolean Flag. If set to true, all displayed characters should be PASSWORD_CHAR
+---@field placeholder string Placeholder text. Printed with Palette.additionalColor if no text is present
 local TextField = { defaultCursor = "ibeam" }
 local TextField_meta = {__index = TextField}
 
@@ -105,7 +111,11 @@ function TextField:updateCarette(noreset)
         self.caretteVisibility = self.focus and true
     end
 
-    self.display.caretteX = self.font:getWidth(string.sub(self.text[self.carettePosition.line], 1, utf.offset(self.text[self.carettePosition.line], self.carettePosition.char + 1) - 1))
+    if not self.password then
+        self.display.caretteX = self.font:getWidth(string.sub(self.text[self.carettePosition.line], 1, utf.offset(self.text[self.carettePosition.line], self.carettePosition.char + 1) - 1))
+    else
+        self.display.caretteX = self.font:getWidth(string.rep(PASSWORD_CHAR, self.carettePosition.char))
+    end
 end
 
 
@@ -279,13 +289,23 @@ function TextField:paint()
     love.graphics.setFont(self.font)
     for i = self.display.beginLine, self.display.lastLine do
         local lineI = i - self.display.beginLine
-        love.graphics.print(self.text[i], self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
+
+        if not self.password then
+            love.graphics.print(self.text[i], self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
+        else
+            love.graphics.print(string.rep(PASSWORD_CHAR, utf.len(self.text[i])), self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
+        end
     end
 
     if self.caretteVisibility then
         if self.display.beginLine <= self.carettePosition.line and self.carettePosition.line <= self.display.lastLine then
             love.graphics.rectangle("fill", self.textX + self.display.caretteX, self.textY - self.display.lineYOffset + self.lineHeight * (self.carettePosition.line - self.display.beginLine), 1, self.lineHeight)
         end
+    end
+
+    if #self.text == 1 and #self.text[1] == 0 and not self:hasFocus() then
+        love.graphics.setColor(self.palette[3])
+        love.graphics.print(self.placeholder, self.textX, self.textY - self.display.lineYOffset)
     end
 
     love.graphics.setStencilTest()
