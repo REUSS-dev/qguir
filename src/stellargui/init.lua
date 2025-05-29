@@ -374,7 +374,7 @@ end
 
 ---Unregister the UI object descriptor in a system by object pointer or registeredIndex
 ---@param uiobj ObjectUI|registeredIndex A UI object/index to unregister
----@param message string Unregister message
+---@param message string? Unregister message
 ---@see ObjectUI.unregister for ui object unregister behavior
 function stellar.unregister(uiobj, message)
     local registeredIndex
@@ -391,10 +391,12 @@ function stellar.unregister(uiobj, message)
         else
             return false
         end
+    else
+        return false
     end
 
-    if not registeredObjects[registeredIndex]:unregister() then
-        registeredObjects[registeredIndex] = nil
+    if not registeredObjects[registeredIndex] then
+        return false
     end
 
     return true
