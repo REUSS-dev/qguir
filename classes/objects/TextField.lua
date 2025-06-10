@@ -360,7 +360,11 @@ function TextField:keyPress(key)
         if self.oneline then
             self:action()
         else
-            self:newline()
+            if love.keyboard.isDown("lctrl") then
+                self:action()
+            else
+                self:newline()
+            end
         end
     elseif key == "backspace" then
         self:backspace()
