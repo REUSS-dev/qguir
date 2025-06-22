@@ -29,8 +29,6 @@ totaldt = 0
 function love.update(dt)
     totaldt = totaldt + dt*5
 
-    print(require("utf8").offset("asd", 0))
-
     --exampleA:move(100 + 50*math.cos(totaldt), 100 + 50*math.sin(totaldt))
 end
 
