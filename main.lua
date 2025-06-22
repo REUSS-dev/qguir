@@ -5,8 +5,8 @@ function love.load()
     love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";src/?.lua;src/?/init.lua")
     love.keyboard.setKeyRepeat(true)
 
-    gui = require("stellargui").hook()
-    gui.loadExternalObjects("src/stellargui/classes")
+    gui = require("init").hook()
+    gui.loadExternalObjects("classes")
 
     exampleA = gui.Button{x = -10, y = 100, w = 100, h = 300, text = "Я памятник себе воздвиг нерукотворный,\
 К нему не зарастет народная тропа,\
@@ -17,7 +17,7 @@ function love.load()
 И славен буду я, доколь в подлунном мире\
 Жив будет хоть один пиит.", action = function() print("kurwo!!!") end, font = love.graphics.newFont("font.ttf", 16)}
 
-    exampleB = gui.TextField{x = "center", y = 50, font = love.graphics.newFont("font.ttf", 16), w = 350, h = 350}
+    exampleB = gui.TextField{x = "center", y = 50, font = love.graphics.newFont("font.ttf", 16), w = 350, h = 200, text = love.filesystem.read("war.txt")}
 
     --exampleA:hide()
     gui.register(exampleA)

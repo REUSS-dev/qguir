@@ -7,8 +7,12 @@ local utf = require("utf8")
 
 -- documentation
 
----@alias TextFieldDisplayTable {caretteX: integer, horizontalScroll: integer, verticalScroll: integer, beginLine: integer, lastLine: integer, lineYOffset: integer}
+---@alias TextFieldCharLine {[1]: integer, [2]: integer} 1 - char, 2 - line
+
+---@alias TextFieldDisplayTable {caretteX: integer, beginLine: integer, lastLine: integer, lineYOffset: integer}
 ---@alias TextFieldCaretteParameters {line: integer, char: integer, nominalChar: integer}
+---@alias TextFieldScrollParameters {[1]: integer, [2]: integer} 1 - horizontal, 2 - vertical
+---@alias TextFieldSelectionParameters {sel1: {[1]: integer, [2]: integer}, sel2: {[1]: integer, [2]: integer}, exists: boolean, active: boolean}
 
 -- config
 
@@ -18,7 +22,7 @@ textfield.rules = {
     {"sizeRectangular", {0, 0, 100, 50}},
     {"position", {position = {"center", "center"}}},
 
-    {"palette", {color = {1, 1, 1, 1}, textColor = {0, 0, 0, 1}, additionalColor = {0.5, 0.5, 0.5, 1}}},
+    {"palette", {colors = {{1, 1, 1, 1}, {0, 0, 0, 1}, {0.5, 0.5, 0.5, 1}, {0.2, 0.2, 0.6, 0.8}}}},
 
     {{"action", "enter", "return"}, "action", function() end},
     {{"text"}, "text", ""},
@@ -94,6 +98,8 @@ end
 ---@field private caretteVisibility boolean
 ---@field private caretteTimer number
 ---@field carettePosition TextFieldCaretteParameters Carette X and Y position (in characters, lines)
+---@field scroll TextFieldScrollParameters Scroll horizontal and vertical values
+---@field selection TextFieldSelectionParameters
 ---@field lineHeight number To be PRIVATED
 ---@field oneline boolean To be PRIVATED
 ---@field display TextFieldDisplayTable Display parameters and cache
@@ -103,109 +109,7 @@ end
 local TextField = { defaultCursor = "ibeam" }
 local TextField_meta = {__index = TextField}
 
----Update carette position
----@param noreset boolean? Do not reset carette timer
-function TextField:updateCarette(noreset)
-    if not noreset then
-        self.caretteTimer = 0
-        self.caretteVisibility = self.focus and true
-    end
-
-    if not self.password then
-        self.display.caretteX = self.font:getWidth(string.sub(self.text[self.carettePosition.line], 1, utf.offset(self.text[self.carettePosition.line], self.carettePosition.char + 1) - 1))
-    else
-        self.display.caretteX = self.font:getWidth(string.rep(PASSWORD_CHAR, self.carettePosition.char))
-    end
-end
-
-
-function TextField:setCarette(char, line, keep_nominal)
-    local carette = self.carettePosition
-
-    if not keep_nominal then
-        carette.nominalChar = char
-    end
-
-    if line < 1 then
-        return
-    end
-
-    if line > #self.text then
-        carette.line = #self.text
-        carette.char = utf_len_exclude_newline(self.text[#self.text])
-        carette.nominalChar = carette.char
-
-        self:updateCarette()
-        return
-    end
-
-    if char > utf_len_exclude_newline(self.text[line]) then
-        char = utf_len_exclude_newline(self.text[line])
-    end
-
-    carette.line = line
-    carette.char = char
-
-    self:updateCarette()
-
-    ---@todo SCROLL UPDATE
-end
-
----Move carette horizontally and vertically
----@param x integer Horizontal movement. -1 for left, 1 for right, 0 for unchanged
----@param y integer Vertical movement. -1 for up, 1 for down, 0 for unchanged
-function TextField:moveCarette(x, y)
-    x, y = x or 0, y or 0
-
-    local char, line = self.carettePosition.char, self.carettePosition.line
-
-    local keep_nominal
-
-    if x > 0 then
-        char = char + 1
-
-        if char > utf_len_exclude_newline(self.text[line]) then
-            char = 0
-            line = line + 1
-        end
-    elseif x < 0 then
-        char = char - 1
-
-        if char < 0 then
-            line = line - 1
-            char = utf_len_exclude_newline(self.text[line] or "")
-        end
-    end
-
-    if y > 0 then
-        line = line + 1
-        char = self.carettePosition.nominalChar
-        keep_nominal = true
-    elseif y < 0 then
-        line = line - 1
-        char = self.carettePosition.nominalChar
-        keep_nominal = true
-    end
-
-    self:setCarette(char, line, keep_nominal)
-end
-
----Updates display parameters beginLine, lineLast, lineYOffset according to scroll
-function TextField:updateDisplay()
-    local display = self.display
-
-    display.lineYOffset = display.verticalScroll % self.lineHeight
-
-    display.beginLine = math.floor(display.verticalScroll / self.lineHeight) + 1
-
-    local free_height = self.textareaH - self.lineHeight + display.lineYOffset
-    display.lastLine = display.beginLine + math.ceil(free_height / self.lineHeight)
-
-    -- normalize last line
-    if display.lastLine > #self.text then
-        display.lastLine = #self.text
-    end
-end
+--#region text wrap & lines processing
 
 function TextField:doWrap()
     local new_text = {}
@@ -237,7 +141,7 @@ function TextField:doWrap()
 end
 
 function TextField:updateWrap()
-    -- Calcaulate and save carette absoute location (in bytes)
+    -- Calcaulate and save carette absoute location (in characters)
     local carette_absolute_location = 0
 
     for i = 1, self.carettePosition.line - 1 do
@@ -249,7 +153,9 @@ function TextField:updateWrap()
     -- Recalculate wrap
     self:setText(self:getText())
 
-    -- Carette set
+    -- Carette restore
+    local restored = false
+
     for i = 1, #self.text do
         local lineLength = utf.len(self.text[i])
 
@@ -257,10 +163,21 @@ function TextField:updateWrap()
             carette_absolute_location = carette_absolute_location - lineLength
         else
             self:setCarette(carette_absolute_location, i)
-            return
+            restored = true
+            break
         end
     end
 
+    if not restored then
+        self:setCarette(utf_len_exclude_newline(self.text[#self.text]), #self.text)
+    end
+    -- scroll check
+    local ostatok = self.lineHeight - self.textareaH % self.lineHeight
+    local scroll_very_bottom = self.lineHeight * (#self.text - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok
+
+    if scroll_very_bottom < self.scroll[2] then
+        self:setScroll(nil, scroll_very_bottom)
+    end
 end
 
 function TextField:getText()
@@ -272,58 +189,291 @@ function TextField:setText(text)
 
     self:doWrap()
     self:updateDisplay()
-    self:setCarette(0, math.huge)
 end
 
-function TextField:paint()
-    love.graphics.setColor(self.palette[1])
-    love.graphics.rectangle("fill", 0, 0, self.w, self.h, self.r)
+--#endregion
 
-    love.graphics.setColor(self.palette[3])
-    love.graphics.rectangle("line", 0, 0, self.w, self.h, self.r)
+--#region scroll
 
-    love.graphics.stencil(self.stencil, "replace", 1)
-    love.graphics.setStencilTest("greater", 0)
+---Updates display parameters beginLine, lineLast, lineYOffset according to scroll
+function TextField:updateDisplay()
+    local display = self.display
 
-    love.graphics.setColor(self.palette[2])
-    love.graphics.setFont(self.font)
-    for i = self.display.beginLine, self.display.lastLine do
-        local lineI = i - self.display.beginLine
+    display.lineYOffset = self.scroll[2] % self.lineHeight
 
-        if not self.password then
-            love.graphics.print(self.text[i], self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
-        else
-            love.graphics.print(string.rep(PASSWORD_CHAR, utf.len(self.text[i])), self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
+    display.beginLine = math.floor(self.scroll[2] / self.lineHeight) + 1
+
+    local free_height = self.textareaH - self.lineHeight + display.lineYOffset
+    display.lastLine = display.beginLine + math.ceil(free_height / self.lineHeight)
+
+    -- normalize last line
+    if display.lastLine > #self.text then
+        display.lastLine = #self.text
+    end
+end
+
+function TextField:setScroll(x, y)
+    local scroll = self.scroll
+
+    scroll[1] = x or scroll[1]
+    scroll[2] = math.min( math.max( y or scroll[2] , 0) , (#self.text)*self.lineHeight)
+
+    self:updateDisplay()
+end
+
+function TextField:translateClick(x, y)
+    x = x - self.x + self.scroll[1] - self.textX
+    y = y - self.y + self.display.lineYOffset - self.textY
+
+    local line = math.max( self.display.beginLine + math.floor(y / self.lineHeight) , 1)
+
+    if line > #self.text then
+        return utf_len_exclude_newline(self.text[#self.text]), #self.text
+    end
+
+    local line_selected = self.text[line]
+    line_selected = line_selected:sub(-1, -1) == "\n" and line_selected:sub(1,-2) or line_selected -- remove newline character from line, if such exists
+
+    local char = 0
+    local previous_width = 0
+    for i = 1, utf.len(line_selected) do
+        local cut_line_width = self.font:getWidth(line_selected:sub(1, utf.offset(line_selected, i + 1) - 1))
+        if (cut_line_width + previous_width) / 2 >= x then
+            break
+        end
+
+        -- Note: We cannot increment current line width by width of a character
+        -- and have to compare x to center of current width and prevoius width
+        -- because of kerning.
+
+        char = i
+        previous_width = cut_line_width
+    end
+
+    return char, line
+end
+
+--#endregion
+
+--#region carette
+
+function TextField:getCarettePosition()
+    return self.carettePosition.char, self.carettePosition.line
+end
+
+function TextField:getCaretteNominalChar()
+    return self.carettePosition.nominalChar
+end
+
+---Move carette horizontally and vertically
+---@param x integer Horizontal movement. -1 for left, 1 for right, 0 for unchanged
+---@param y integer Vertical movement. -1 for up, 1 for down, 0 for unchanged
+---@param adjust_selection boolean Allow carette movement adjust and create selection and not reset it.
+function TextField:moveCarette(x, y, adjust_selection)
+    x, y = x or 0, y or 0
+
+    local char, line = self:getCarettePosition()
+
+    local keep_nominal
+
+    if self:selectionExists() then
+        if not adjust_selection then
+            local begin, finish = self:getSelection() --[[@as TextFieldCharLine]]
+
+            if y > 0 then
+                char, line = finish[1], finish[2]
+            elseif y < 0 then
+                char, line = begin[1], begin[2]
+            elseif x > 0 then
+                char, line = finish[1] - 1, finish[2]
+            elseif x < 0 then
+                char, line = begin[1] + 1, begin[2]
+            end
+
+            self:endSelection()
+            self:clearSelection()
+        end
+    else
+        if adjust_selection then
+            self:startSelection()
         end
     end
 
-    if self.caretteVisibility then
-        if self.display.beginLine <= self.carettePosition.line and self.carettePosition.line <= self.display.lastLine then
-            love.graphics.rectangle("fill", self.textX + self.display.caretteX, self.textY - self.display.lineYOffset + self.lineHeight * (self.carettePosition.line - self.display.beginLine), 1, self.lineHeight)
+    if x > 0 then
+        char = char + 1
+
+        if char > utf_len_exclude_newline(self.text[line]) then
+            char = 0
+            line = line + 1
+        end
+    elseif x < 0 then
+        char = char - 1
+
+        if char < 0 then
+            line = line - 1
+            char = utf_len_exclude_newline(self.text[line] or "")
         end
     end
 
-    if #self.text == 1 and #self.text[1] == 0 and not self:hasFocus() then
-        love.graphics.setColor(self.palette[3])
-        love.graphics.print(self.placeholder, self.textX, self.textY - self.display.lineYOffset)
+    if y > 0 then
+        line = line + 1
+        char = self:getCaretteNominalChar()
+        keep_nominal = true
+    elseif y < 0 then
+        line = line - 1
+        char = self:getCaretteNominalChar()
+        keep_nominal = true
     end
 
-    love.graphics.setStencilTest()
+    self:setCarette(char, line, keep_nominal)
+
+    if adjust_selection then
+        self.selection.active = false
+        self:updateSelection()
+    end
 end
 
-function TextField:textinput(text)
-    local carette_char, carette_line = self.carettePosition.char, self.carettePosition.line
+function TextField:setCarette(char, line, keep_nominal)
+    local carette = self.carettePosition
 
-    local cur_line = self.text[carette_line]
+    if not keep_nominal then
+        carette.nominalChar = char
+    end
 
-    self.text[carette_line] = cur_line:sub(1, utf.offset(cur_line, carette_char + 1) - 1) .. text .. cur_line:sub(utf.offset(cur_line, carette_char + 1), -1)
+    if line < 1 then
+        return
+    end
 
-    self:moveCarette(1, 0)
-    self:updateWrap()
+    if line > #self.text then
+        carette.line = #self.text
+        carette.char = utf_len_exclude_newline(self.text[#self.text])
+        carette.nominalChar = carette.char
+
+        self:updateCaretteVisual()
+        return
+    end
+
+    if char > utf_len_exclude_newline(self.text[line]) then
+        char = utf_len_exclude_newline(self.text[line])
+    end
+
+    carette.line = line
+    carette.char = char
+
+    self:updateCaretteVisual()
+
+    -- Update scroll
+    if line <= self.display.beginLine then
+        self:setScroll(nil, (line - 1) * self.lineHeight)
+    elseif line >= self.display.lastLine then
+        local ostatok = self.lineHeight - self.textareaH % self.lineHeight
+        self:setScroll(nil, self.lineHeight * (line - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok)
+    end
 end
+
+---Update carette position
+---@param noreset boolean? Do not reset carette blink timer
+function TextField:updateCaretteVisual(noreset)
+    if not noreset then
+        self.caretteTimer = 0
+        self.caretteVisibility = self.focus and true
+    end
+
+    local char, line = self:getCarettePosition()
+
+    if not self.password then
+        self.display.caretteX = self.font:getWidth(string.sub(self.text[line], 1, utf.offset(self.text[line], char + 1) - 1))
+    else
+        self.display.caretteX = self.font:getWidth(string.rep(PASSWORD_CHAR, char))
+    end
+end
+
+--#endregion
+
+--#region selection
+
+function TextField:selectionExists()
+    return self.selection.sel1[1] ~= self.selection.sel2[1] or self.selection.sel1[2] ~= self.selection.sel2[2]
+end
+
+function TextField:clearSelection()
+    self.selection.sel2 = self.selection.sel1
+end
+
+function TextField:startSelection(mouse_controlled)
+    self.selection.active = mouse_controlled
+
+    self.selection.sel1 = {self:getCarettePosition()}
+    self.selection.sel2 = {self:getCarettePosition()}
+end
+
+function TextField:updateSelection()
+    self.selection.sel2[1], self.selection.sel2[2] = self:getCarettePosition()
+end
+
+function TextField:endSelection()
+    self.selection.active = false
+end
+
+function TextField:getSelection()
+    local start, finish = self.selection.sel1, self.selection.sel2
+
+    if not self:selectionExists() then
+        return nil
+    end
+
+    if start[2] < finish[2] then -- sel1 is on the line before sel2
+        return start, finish
+    elseif start[2] > finish[2] then -- sel1 is on the line after sel2
+        return finish, start
+    end
+
+    -- situation: sel1 & sel2 are on the same line
+
+    if start[1] < finish[1] then -- sel1 char is before sel2
+        return start, finish
+    else -- sel1 char is after sel2 (cannot be equal because it contradicts `not self:selectionExists()` above)
+        return finish, start
+    end
+end
+
+function TextField:cutSelection()
+    self:endSelection()
+
+    if not self:selectionExists() then
+        return
+    end
+
+    local start, finish = self:getSelection() --[[@as TextFieldCharLine]]
+
+    self:setCarette(start[1], start[2])
+
+    if start[2] == finish[2] then -- one-line selection
+        local line_contents = self.text[start[2]]
+
+        self.text[start[2]] = line_contents:sub(1, utf.offset(line_contents, start[1] + 1) - 1) .. line_contents:sub(utf.offset(line_contents, finish[1] + 1), -1)
+    else -- multi-line selection
+        self.text[start[2]] = self.text[start[2]]:sub(1, utf.offset(self.text[start[2]], start[1] + 1) - 1)
+        self.text[finish[2]] = self.text[finish[2]]:sub(utf.offset(self.text[finish[2]], finish[1] + 1), -1)
+
+        for i = finish[2] - 1, start[2] + 1, -1 do
+            table.remove(self.text, i)
+        end
+    end
+
+    self:clearSelection()
+
+    return true
+end
+
+--#endregion
+
+--#region text manipulation
 
 function TextField:newline()
-    local carette_char, carette_line = self.carettePosition.char, self.carettePosition.line
+    self:cutSelection()
+
+    local carette_char, carette_line = self:getCarettePosition()
 
     local cur_line = self.text[carette_line]
 
@@ -337,25 +487,128 @@ function TextField:newline()
 end
 
 function TextField:backspace()
-    local carette_char, carette_line = self.carettePosition.char, self.carettePosition.line
+    if self:cutSelection() then
+        self:updateWrap()
+        return
+    end
+
+    local carette_char, carette_line = self:getCarettePosition()
 
     if carette_char > 0 then -- Remove character from current line
         local cur_line = self.text[carette_line]
 
         self.text[carette_line] = cur_line:sub(1, utf.offset(cur_line, carette_char) - 1) .. cur_line:sub(utf.offset(cur_line, carette_char + 1), -1)
-        self:moveCarette(-1, 0)
+        self:moveCarette(-1, 0, false)
     elseif carette_line > 1 then -- Append lines (backspace at char 0)
         -- Cut last character of previous line
         self.text[carette_line - 1] = self.text[carette_line - 1]:sub(1, utf.offset(self.text[carette_line - 1], -1) - 1)
 
         -- Move cursor left
-        self:moveCarette(-1, 0)
+        self:moveCarette(-1, 0, false)
     end
 
     self:updateWrap()
 end
 
+--#endregion
+
+--#region render
+
+function TextField:paintField()
+    love.graphics.setColor(self.palette[1])
+    love.graphics.rectangle("fill", 0, 0, self.w, self.h, self.r)
+
+    love.graphics.setColor(self.palette[3])
+    love.graphics.rectangle("line", 0, 0, self.w, self.h, self.r)
+end
+
+function TextField:enableStencil()
+    love.graphics.stencil(self.stencil, "replace", 1)
+    love.graphics.setStencilTest("greater", 0)
+end
+
+function TextField:paintSelection()
+    if not self:selectionExists() then
+        return
+    end
+
+    local start, finish = self:getSelection() --[[@as TextFieldCharLine]]
+
+    love.graphics.setColor(self.palette:getColorByIndex(4))
+
+    -- one-line selection
+    if start[2] == finish[2] then
+        if start[2] < self.display.beginLine or self.display.lastLine < start[2] then
+            return
+        end
+
+        local line_contents = self.text[start[2]]
+
+        local skiped_text_width = self.font:getWidth(line_contents:sub(1, utf.offset(line_contents, start[1] + 1) - 1))
+
+        local selection_width = self.font:getWidth(line_contents:sub(utf.offset(line_contents, start[1] + 1), utf.offset(line_contents, finish[1] + 1) - 1))
+
+        love.graphics.rectangle("fill", self.textX + skiped_text_width, self.textY - self.display.lineYOffset + (start[2] - self.display.beginLine) * self.lineHeight, selection_width, self.lineHeight)
+
+        return
+    end
+
+    -- multi-line selection
+    for i = math.max(start[2], self.display.beginLine), math.min(finish[2], self.display.lastLine) do
+        local lineI = i - self.display.beginLine
+        local line_contents = self.text[i]
+
+        local skiped_text_width, selection_width = 0, 0
+
+        if i == start[2] then -- selection beginning line
+            skiped_text_width = self.font:getWidth(line_contents:sub(1, utf.offset(line_contents, start[1] + 1) - 1))
+            selection_width = self.font:getWidth(line_contents:gsub("\n", " "):sub(utf.offset(line_contents, start[1] + 1), -1))
+        elseif i < finish[2] then -- selection in-between line
+            selection_width = self.font:getWidth(line_contents:gsub("\n", " "))
+        else -- selection end line
+            selection_width = self.font:getWidth(line_contents:sub(1, utf.offset(line_contents, finish[1] + 1) - 1))
+        end
+
+        love.graphics.rectangle("fill", self.textX + skiped_text_width, self.textY - self.display.lineYOffset + lineI * self.lineHeight, selection_width, self.lineHeight)
+    end
+end
+
+function TextField:paintText()
+    if #self.text == 1 and #self.text[1] == 0 and not self:hasFocus() then
+        love.graphics.setColor(self.palette[3])
+        love.graphics.print(self.placeholder, self.textX, self.textY - self.display.lineYOffset)
+
+        return
+    end
+
+    love.graphics.setColor(self.palette[2])
+    love.graphics.setFont(self.font)
+    for i = self.display.beginLine, self.display.lastLine do
+        local lineI = i - self.display.beginLine
+
+        if not self.password then
+            love.graphics.print(self.text[i], self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
+        else
+            love.graphics.print(string.rep(PASSWORD_CHAR, utf.len(self.text[i])), self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
+        end
+    end
+end
+
+function TextField:paintCarette()
+    if self.display.beginLine <= self.carettePosition.line and self.carettePosition.line <= self.display.lastLine then
+        love.graphics.rectangle("fill", self.textX + self.display.caretteX, self.textY - self.display.lineYOffset + self.lineHeight * (self.carettePosition.line - self.display.beginLine), 1, self.lineHeight)
+    end
+end
+
+function TextField:disableStencil()
+    love.graphics.setStencilTest()
+end
+
+--#endregion
+
 function TextField:keyPress(key)
+    local shift_held = love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+
     if key == "return" then
         if self.oneline then
             self:action()
@@ -369,13 +622,36 @@ function TextField:keyPress(key)
     elseif key == "backspace" then
         self:backspace()
     elseif key == "left" then
-        self:moveCarette(-1, 0)
+        self:moveCarette(-1, 0, shift_held)
     elseif key == "right" then
-        self:moveCarette(1, 0)
+        self:moveCarette(1, 0, shift_held)
     elseif key == "up" then
-        self:moveCarette(0, -1)
+        self:moveCarette(0, -1, shift_held)
     elseif key == "down" then
-        self:moveCarette(0, 1)
+        self:moveCarette(0, 1, shift_held)
+    end
+end
+
+function TextField:textinput(text)
+    self:cutSelection()
+
+    local carette_char, carette_line = self:getCarettePosition()
+
+    local cur_line = self.text[carette_line]
+
+    self.text[carette_line] = cur_line:sub(1, utf.offset(cur_line, carette_char + 1) - 1) .. text .. cur_line:sub(utf.offset(cur_line, carette_char + 1), -1)
+
+    self:moveCarette(1, 0, false)
+    self:updateWrap()
+end
+
+function TextField:click(x, y, but)
+    if but == 1 then
+        local char, line = self:translateClick(x, y)
+
+        self:setCarette(char, line)
+
+        self:startSelection(true)
     end
 end
 
@@ -387,7 +663,34 @@ function TextField:tick(dt)
             self.caretteTimer = self.caretteTimer - TEXT_CARETTE_BLINK_PERIOD
             self.caretteVisibility = not self.caretteVisibility
         end
+
+        if self.selection.active then
+            local mx, my = love.mouse.getPosition()
+            local char, line = self:translateClick(mx, my)
+
+            self:setCarette(char, line)
+            self:updateSelection()
+
+            if not love.mouse.isDown(1) then
+                self:endSelection()
+            end
+        end
     end
+end
+
+function TextField:paint()
+    self:paintField()
+
+    self:enableStencil()
+
+    self:paintSelection()
+    self:paintText()
+
+    if self.caretteVisibility then
+        self:paintCarette()
+    end
+
+    self:disableStencil()
 end
 
 function TextField:gainFocus()
@@ -441,13 +744,14 @@ function textfield.new(prototype)
 
     obj.carettePosition = {}
     obj.display = {}
+    obj.scroll = {0, 0}
+    obj.selection = {sel1 = {0, 0}, sel2 = {0, 0}, active = false}
 
-    obj.display.horizontalScroll = 0
-    obj.display.verticalScroll = 0
     obj:updateDisplay()
     obj:setText(obj.text)
+    obj:setCarette(0, math.huge)
 
-    obj:updateCarette()
+    obj:updateCaretteVisual()
 
     return obj
 end

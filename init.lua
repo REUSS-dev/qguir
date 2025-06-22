@@ -464,7 +464,14 @@ function stellar.drawMousePosition()
         {1, 1, 1, 1}
     )
 
-    love.graphics.print(love.mouse.getX() .. "; " .. love.mouse.getY(), 0, 0)
+    local text = love.mouse.getX() .. "; " .. love.mouse.getY()
+
+    if love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift") then
+        text = text .. " <SHIFT>"
+    end
+
+    love.graphics.print(text, love.mouse.getX(), love.mouse.getY() - love.graphics.getFont():getHeight())
+    love.graphics.print(text, 0, 0)
 end
 
 --#endregion
@@ -503,7 +510,6 @@ function stellar.hook(force)
                 end
 
                 currentHl:click(x, y, but)
-                print("clicked", currentHl.x, currentHl.y, currentHl.w, currentHl.h)
 
                 -- Double click shenanigans
                 if
