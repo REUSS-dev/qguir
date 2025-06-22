@@ -118,7 +118,7 @@ function Button:generateTextCache()
 
         -- cut text progressively from end until it is possible to fit it 
         repeat
-            tocut = string.sub(tocut, 1, utf.offset(tocut, -1) - 1)
+            tocut = utf.sub(tocut, 1, -2)
 
             local _, cutlines = self.font:getWrap(tocut .. "..", self.w)
         until #cutlines <= allowedLines
