@@ -598,6 +598,8 @@ function TextField:paintSelection()
 end
 
 function TextField:paintText()
+    love.graphics.setFont(self.font)
+
     if #self.text == 1 and #self.text[1] == 0 and not self:hasFocus() then
         love.graphics.setColor(self.palette[3])
         love.graphics.print(self.placeholder, self.textX, self.textY - self.display.lineYOffset)
@@ -606,7 +608,6 @@ function TextField:paintText()
     end
 
     love.graphics.setColor(self.palette[2])
-    love.graphics.setFont(self.font)
     for i = self.display.beginLine, self.display.lastLine do
         local lineI = i - self.display.beginLine
 
