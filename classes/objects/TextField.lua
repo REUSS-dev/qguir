@@ -237,7 +237,7 @@ function TextField:translateClick(x, y)
     local char = 0
     local previous_width = 0
     for i = 1, utf.len(line_selected) do
-        local cut_line_width = self.font:getWidth(line_selected:sub(1, utf.offset(line_selected, i + 1) - 1))
+        local cut_line_width = self.font:getWidth(utf.sub(line_selected, 1, i))
         if (cut_line_width + previous_width) / 2 >= x then
             break
         end
@@ -451,10 +451,10 @@ function TextField:cutSelection()
     if start[2] == finish[2] then -- one-line selection
         local line_contents = self.text[start[2]]
 
-        self.text[start[2]] = line_contents:sub(1, utf.offset(line_contents, start[1] + 1) - 1) .. line_contents:sub(utf.offset(line_contents, finish[1] + 1), -1)
+        self.text[start[2]] = utf.sub(line_contents, 1, start[1]) .. utf.sub(line_contents, finish[1] + 1, -1)
     else -- multi-line selection
-        self.text[start[2]] = self.text[start[2]]:sub(1, utf.offset(self.text[start[2]], start[1] + 1) - 1)
-        self.text[finish[2]] = self.text[finish[2]]:sub(utf.offset(self.text[finish[2]], finish[1] + 1), -1)
+        self.text[start[2]] = utf.sub(self.text[start[2]], 1, start[1])
+        self.text[finish[2]] = utf.sub(self.text[finish[2]], finish[1] + 1, -1)
 
         for i = finish[2] - 1, start[2] + 1, -1 do
             table.remove(self.text, i)
@@ -477,9 +477,9 @@ function TextField:newline()
 
     local cur_line = self.text[carette_line]
 
-    self.text[carette_line] = cur_line:sub(1, utf.offset(cur_line, carette_char + 1) - 1) .. "\n"
+    self.text[carette_line] = utf.sub(cur_line, 1, carette_char) .. "\n"
 
-    local new_line = cur_line:sub(utf.offset(cur_line, carette_char + 1), -1)
+    local new_line = utf.sub(cur_line, carette_char + 1, -1)
     table.insert(self.text, carette_line + 1, new_line)
 
     self:setCarette(0, carette_line + 1)
@@ -497,11 +497,11 @@ function TextField:backspace()
     if carette_char > 0 then -- Remove character from current line
         local cur_line = self.text[carette_line]
 
-        self.text[carette_line] = cur_line:sub(1, utf.offset(cur_line, carette_char) - 1) .. cur_line:sub(utf.offset(cur_line, carette_char + 1), -1)
+        self.text[carette_line] = utf.sub(cur_line, 1, carette_char - 1) .. utf.sub(cur_line, carette_char + 1, -1)
         self:moveCarette(-1, 0, false)
     elseif carette_line > 1 then -- Append lines (backspace at char 0)
         -- Cut last character of previous line
-        self.text[carette_line - 1] = self.text[carette_line - 1]:sub(1, utf.offset(self.text[carette_line - 1], -1) - 1)
+        self.text[carette_line - 1] = utf.sub(self.text[carette_line - 1], 1, -2)
 
         -- Move cursor left
         self:moveCarette(-1, 0, false)
@@ -544,9 +544,9 @@ function TextField:paintSelection()
 
         local line_contents = self.text[start[2]]
 
-        local skiped_text_width = self.font:getWidth(line_contents:sub(1, utf.offset(line_contents, start[1] + 1) - 1))
+        local skiped_text_width = self.font:getWidth(utf.sub(line_contents, 1, start[1]))
 
-        local selection_width = self.font:getWidth(line_contents:sub(utf.offset(line_contents, start[1] + 1), utf.offset(line_contents, finish[1] + 1) - 1))
+        local selection_width = self.font:getWidth(utf.sub(line_contents, start[1] + 1, finish[1]))
 
         love.graphics.rectangle("fill", self.textX + skiped_text_width, self.textY - self.display.lineYOffset + (start[2] - self.display.beginLine) * self.lineHeight, selection_width, self.lineHeight)
 
@@ -561,12 +561,12 @@ function TextField:paintSelection()
         local skiped_text_width, selection_width = 0, 0
 
         if i == start[2] then -- selection beginning line
-            skiped_text_width = self.font:getWidth(line_contents:sub(1, utf.offset(line_contents, start[1] + 1) - 1))
-            selection_width = self.font:getWidth(line_contents:gsub("\n", " "):sub(utf.offset(line_contents, start[1] + 1), -1))
+            skiped_text_width = self.font:getWidth(utf.sub(line_contents, 1, start[1]))
+            selection_width = self.font:getWidth(utf.sub(line_contents:gsub("\n", " "), start[1] + 1, -1))
         elseif i < finish[2] then -- selection in-between line
             selection_width = self.font:getWidth(line_contents:gsub("\n", " "))
         else -- selection end line
-            selection_width = self.font:getWidth(line_contents:sub(1, utf.offset(line_contents, finish[1] + 1) - 1))
+            selection_width = self.font:getWidth(utf.sub(line_contents, 1, finish[1]))
         end
 
         love.graphics.rectangle("fill", self.textX + skiped_text_width, self.textY - self.display.lineYOffset + lineI * self.lineHeight, selection_width, self.lineHeight)
@@ -639,7 +639,7 @@ function TextField:textinput(text)
 
     local cur_line = self.text[carette_line]
 
-    self.text[carette_line] = cur_line:sub(1, utf.offset(cur_line, carette_char + 1) - 1) .. text .. cur_line:sub(utf.offset(cur_line, carette_char + 1), -1)
+    self.text[carette_line] = utf.sub(cur_line, 1, carette_char) .. text .. utf.sub(cur_line, carette_char + 1, -1)
 
     self:moveCarette(1, 0, false)
     self:updateWrap()

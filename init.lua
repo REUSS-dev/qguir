@@ -8,6 +8,7 @@ love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. love.f
 print(love.filesystem.getRequirePath())
 
 local ffi = require("ffi")
+local utf = require("utf8")
 
 local paletteClass = require("classes.Palette")
 
@@ -85,7 +86,7 @@ setmetatable(cursorStorage, {
     end
 })
 
---- Figuring out the doubleclick time in windows
+--- Figuring out the doubleclick time
 
 if love.system.getOS() == "Windows" then
     ffi.cdef[[
@@ -96,6 +97,11 @@ if love.system.getOS() == "Windows" then
 end
 
 -- fnc
+
+--- utf-aware string.sub()
+local function utf_sub(str, b, e)
+    return string.sub(str, utf.offset(str, b), e ~= -1 and (utf.offset(str, e + 1) - 1) or -1)
+end
 
 ---Standard update function for the functionality of StellarGUI
 ---@param dt seconds
@@ -482,6 +488,14 @@ function stellar.hook(force)
     if hooked and not force then
         return stellar
     end
+
+    --- Set up utf.sub if such is not provided
+
+    if not utf.sub then
+        utf.sub = utf_sub
+    end
+
+    --- Set up callbacks
     
     local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc
 
