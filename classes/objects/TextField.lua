@@ -114,7 +114,7 @@ local TextField_meta = {__index = TextField}
 function TextField:doWrap()
     local new_text = {}
 
-    for i = 1, #self.text do
+    for i = 1, self:getLineCount() do
         -- Since LOVE 11.4 love.Font:getWrap() does not leave CR at the end of the line
         -- when wrapping CRLF newlines. This is very bad as now we do not currently have 
         -- an easy method of telling apart the CRLF wrap from the limit-reach wrap
@@ -145,7 +145,7 @@ function TextField:updateWrap()
     local carette_absolute_location = 0
 
     for i = 1, self.carettePosition.line - 1 do
-        carette_absolute_location = carette_absolute_location + utf.len(self.text[i])
+        carette_absolute_location = carette_absolute_location + self:getLineLength(i)
     end
 
     carette_absolute_location = carette_absolute_location + self.carettePosition.char
@@ -153,11 +153,13 @@ function TextField:updateWrap()
     -- Recalculate wrap
     self:setText(self:getText())
 
+    local last_line = self:getLineCount()
+
     -- Carette restore
     local restored = false
 
-    for i = 1, #self.text do
-        local lineLength = utf.len(self.text[i])
+    for i = 1, last_line do
+        local lineLength = self:getLineLength(i)
 
         if carette_absolute_location >= lineLength then
             carette_absolute_location = carette_absolute_location - lineLength
@@ -169,11 +171,11 @@ function TextField:updateWrap()
     end
 
     if not restored then
-        self:setCarette(utf_len_exclude_newline(self.text[#self.text]), #self.text)
+        self:setCarette(self:getLineLength_woLF(last_line), last_line)
     end
     -- scroll check
     local ostatok = self.lineHeight - self.textareaH % self.lineHeight
-    local scroll_very_bottom = self.lineHeight * (#self.text - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok
+    local scroll_very_bottom = self.lineHeight * (last_line - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok
 
     if scroll_very_bottom < self.scroll[2] then
         self:setScroll(nil, scroll_very_bottom)
@@ -189,6 +191,30 @@ function TextField:setText(text)
 
     self:doWrap()
     self:updateDisplay()
+end
+
+function TextField:getLineCount()
+    return #self.text
+end
+
+function TextField:getLineLength(line_n)
+    return utf.len(self.text[line_n])
+end
+
+function TextField:getLineLength_woLF(line_n)
+    return utf_len_exclude_newline(self.text[line_n] or "")
+end
+
+function TextField:getLineDisplay(line_n)
+    return self.text[line_n]
+end
+
+function TextField:getLineDisplay_password(line_n)
+    if string.sub(self.text[line_n], -1, -1) ~= "\n" then
+        return string.rep(PASSWORD_CHAR, self:getLineLength_woLF(line_n))
+    else
+        return string.rep(PASSWORD_CHAR, self:getLineLength_woLF(line_n)) .. "\n"
+    end
 end
 
 --#endregion
@@ -207,8 +233,8 @@ function TextField:updateDisplay()
     display.lastLine = display.beginLine + math.ceil(free_height / self.lineHeight)
 
     -- normalize last line
-    if display.lastLine > #self.text then
-        display.lastLine = #self.text
+    if display.lastLine > self:getLineCount() then
+        display.lastLine = self:getLineCount()
     end
 end
 
@@ -216,7 +242,7 @@ function TextField:setScroll(x, y)
     local scroll = self.scroll
 
     scroll[1] = x or scroll[1]
-    scroll[2] = math.min( math.max( y or scroll[2] , 0) , (#self.text)*self.lineHeight)
+    scroll[2] = math.min( math.max( y or scroll[2] , 0) , self:getLineCount()*self.lineHeight) ---@todo Вычислять максимальный скролл здесь так же, как и в других функциях. реализовать максимальный скролл через setScroll(nil, math.huge)
 
     self:updateDisplay()
 end
@@ -227,11 +253,12 @@ function TextField:translateClick(x, y)
 
     local line = math.max( self.display.beginLine + math.floor(y / self.lineHeight) , 1)
 
-    if line > #self.text then
-        return utf_len_exclude_newline(self.text[#self.text]), #self.text
+    local last_line = self:getLineCount()
+    if line > self:getLineCount() then
+        return self:getLineLength_woLF(last_line), last_line
     end
 
-    local line_selected = self.text[line]
+    local line_selected = self:getLineDisplay(line)
     line_selected = line_selected:sub(-1, -1) == "\n" and line_selected:sub(1,-2) or line_selected -- remove newline character from line, if such exists
 
     local char = 0
@@ -302,7 +329,7 @@ function TextField:moveCarette(x, y, adjust_selection)
     if x > 0 then
         char = char + 1
 
-        if char > utf_len_exclude_newline(self.text[line]) then
+        if char > self:getLineLength_woLF(line) then
             char = 0
             line = line + 1
         end
@@ -311,7 +338,7 @@ function TextField:moveCarette(x, y, adjust_selection)
 
         if char < 0 then
             line = line - 1
-            char = utf_len_exclude_newline(self.text[line] or "")
+            char = self:getLineLength_woLF(line)
         end
     end
 
@@ -344,17 +371,18 @@ function TextField:setCarette(char, line, keep_nominal)
         return
     end
 
-    if line > #self.text then
-        carette.line = #self.text
-        carette.char = utf_len_exclude_newline(self.text[#self.text])
+    local last_line = self:getLineCount()
+    if line > last_line then
+        carette.line = last_line
+        carette.char = self:getLineLength_woLF(last_line)
         carette.nominalChar = carette.char
 
         self:updateCaretteVisual()
         return
     end
 
-    if char > utf_len_exclude_newline(self.text[line]) then
-        char = utf_len_exclude_newline(self.text[line])
+    if char > self:getLineLength_woLF(line) then
+        char = self:getLineLength_woLF(line)
     end
 
     carette.line = line
@@ -381,11 +409,7 @@ function TextField:updateCaretteVisual(noreset)
 
     local char, line = self:getCarettePosition()
 
-    if not self.password then
-        self.display.caretteX = self.font:getWidth(string.sub(self.text[line], 1, utf.offset(self.text[line], char + 1) - 1))
-    else
-        self.display.caretteX = self.font:getWidth(string.rep(PASSWORD_CHAR, char))
-    end
+    self.display.caretteX = self.font:getWidth(utf.sub(self:getLineDisplay(line), 1, char))
 end
 
 --#endregion
@@ -542,7 +566,7 @@ function TextField:paintSelection()
             return
         end
 
-        local line_contents = self.text[start[2]]
+        local line_contents = self:getLineDisplay(start[2])
 
         local skiped_text_width = self.font:getWidth(utf.sub(line_contents, 1, start[1]))
 
@@ -556,7 +580,7 @@ function TextField:paintSelection()
     -- multi-line selection
     for i = math.max(start[2], self.display.beginLine), math.min(finish[2], self.display.lastLine) do
         local lineI = i - self.display.beginLine
-        local line_contents = self.text[i]
+        local line_contents = self:getLineDisplay(i)
 
         local skiped_text_width, selection_width = 0, 0
 
@@ -586,11 +610,7 @@ function TextField:paintText()
     for i = self.display.beginLine, self.display.lastLine do
         local lineI = i - self.display.beginLine
 
-        if not self.password then
-            love.graphics.print(self.text[i], self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
-        else
-            love.graphics.print(string.rep(PASSWORD_CHAR, utf.len(self.text[i])), self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
-        end
+        love.graphics.print(self:getLineDisplay(i), self.textX, self.textY - self.display.lineYOffset + lineI * self.lineHeight)
     end
 end
 
@@ -740,6 +760,10 @@ function textfield.new(prototype)
 
     if obj.oneline then
         obj.textY = math.floor(obj:getHeight()/2 - obj.lineHeight/2)
+    end
+
+    if obj.password then
+        obj.getLineDisplay = TextField.getLineDisplay_password
     end
 
     obj.carettePosition = {}
