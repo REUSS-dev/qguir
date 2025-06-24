@@ -416,6 +416,10 @@ end
 
 --#region selection
 
+function TextField:shiftHeld()
+    return love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+end
+
 function TextField:selectionExists()
     return self.selection.sel1[1] ~= self.selection.sel2[1] or self.selection.sel1[2] ~= self.selection.sel2[2]
 end
@@ -534,6 +538,26 @@ function TextField:backspace()
     self:updateWrap()
 end
 
+function TextField:del()
+    if self:cutSelection() then
+        self:updateWrap()
+        return
+    end
+
+    local carette_char, carette_line = self:getCarettePosition()
+
+    if carette_char < self:getLineLength(carette_line) then -- Remove character from current line
+        local cur_line = self.text[carette_line]
+
+        self.text[carette_line] = utf.sub(cur_line, 1, carette_char) .. utf.sub(cur_line, carette_char + 2, -1)
+    elseif carette_line < self:getLineCount() then -- Remove character from next line
+        -- Cut first character of next line
+        self.text[carette_line + 1] = utf.sub(self.text[carette_line + 1], 2, -1)
+    end
+
+    self:updateWrap()
+end
+
 --#endregion
 
 --#region render
@@ -628,7 +652,7 @@ end
 --#endregion
 
 function TextField:keyPress(key)
-    local shift_held = love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+    local shift_held = self:shiftHeld()
 
     if key == "return" then
         if self.oneline then
@@ -650,6 +674,8 @@ function TextField:keyPress(key)
         self:moveCarette(0, -1, shift_held)
     elseif key == "down" then
         self:moveCarette(0, 1, shift_held)
+    elseif key == "delete" then
+        self:del()
     end
 end
 
@@ -670,9 +696,20 @@ function TextField:click(x, y, but)
     if but == 1 then
         local char, line = self:translateClick(x, y)
 
-        self:setCarette(char, line)
+        if self:shiftHeld() then
+            if not self:selectionExists() then
+                self:startSelection(true)
+            end
 
-        self:startSelection(true)
+            self:setCarette(char, line)
+
+            self:updateSelection()
+            
+        else
+            self:setCarette(char, line)
+
+            self:startSelection(true)
+        end
     end
 end
 
