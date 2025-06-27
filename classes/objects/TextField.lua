@@ -244,7 +244,7 @@ function TextField:setScroll(x, y)
     local ostatok = self.lineHeight - self.textareaH % self.lineHeight
     local max_scroll = self.lineHeight * (self:getLineCount() - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok
 
-    scroll[2] = math.min( math.max( y or scroll[2] , 0) , max_scroll)
+    scroll[2] = math.max( math.min( y or scroll[2] , max_scroll) , 0)
 
     self:updateDisplay()
 end
@@ -626,6 +626,7 @@ end
 function TextField:paintText()
     love.graphics.setFont(self.font)
 
+    -- Paint placeholder text, when textfield is empty
     if #self.text == 1 and #self.text[1] == 0 and not self:hasFocus() then
         love.graphics.setColor(self.palette[3])
         love.graphics.print(self.placeholder, self.textX, self.textY - self.display.lineYOffset)
@@ -699,6 +700,8 @@ function TextField:click(x, y, but)
         if self:shiftHeld() then
             if not self:selectionExists() then
                 self:startSelection(true)
+            else
+                self.selection.active = true
             end
 
             self:setCarette(char, line)
