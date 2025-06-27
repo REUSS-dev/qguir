@@ -173,13 +173,9 @@ function TextField:updateWrap()
     if not restored then
         self:setCarette(self:getLineLength_woLF(last_line), last_line)
     end
-    -- scroll check
-    local ostatok = self.lineHeight - self.textareaH % self.lineHeight
-    local scroll_very_bottom = self.lineHeight * (last_line - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok
 
-    if scroll_very_bottom < self.scroll[2] then
-        self:setScroll(nil, scroll_very_bottom)
-    end
+    -- recheck scroll (might be too far down after wrap update)
+    self:setScroll()
 end
 
 function TextField:getText()
@@ -241,8 +237,14 @@ end
 function TextField:setScroll(x, y)
     local scroll = self.scroll
 
+    -- horizontal scroll
     scroll[1] = x or scroll[1]
-    scroll[2] = math.min( math.max( y or scroll[2] , 0) , self:getLineCount()*self.lineHeight) ---@todo Вычислять максимальный скролл здесь так же, как и в других функциях. реализовать максимальный скролл через setScroll(nil, math.huge)
+
+    -- vertical scroll
+    local ostatok = self.lineHeight - self.textareaH % self.lineHeight
+    local max_scroll = self.lineHeight * (self:getLineCount() - math.ceil(self.textareaH / self.lineHeight) - 1) + ostatok
+
+    scroll[2] = math.min( math.max( y or scroll[2] , 0) , max_scroll)
 
     self:updateDisplay()
 end
