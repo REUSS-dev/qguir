@@ -577,7 +577,14 @@ function stellar.hook(force)
                 focusedObject = nil
             end
         else
-            love_keypressed(key, scancode, isrepeat)
+            love_keypressed(
+                key,
+                love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl"),
+                love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift"),
+                love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt"),
+                scancode,
+                isrepeat
+            )
         end
     end
 
@@ -588,7 +595,14 @@ function stellar.hook(force)
                 focusedObject = nil
             end
         else
-            love_keyreleased(key, scancode, isrepeat)
+            love_keyreleased(
+                key,
+                love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl"),
+                love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift"),
+                love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt"),
+                scancode,
+                isrepeat
+            )
         end
     end
 

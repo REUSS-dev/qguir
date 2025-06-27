@@ -653,14 +653,12 @@ end
 
 --#endregion
 
-function TextField:keyPress(key)
-    local shift_held = self:shiftHeld()
-
+function TextField:keyPress(key, ctrl, shift)
     if key == "return" then
         if self.oneline then
             self:action()
         else
-            if love.keyboard.isDown("lctrl") then
+            if ctrl then
                 self:action()
             else
                 self:newline()
@@ -669,13 +667,13 @@ function TextField:keyPress(key)
     elseif key == "backspace" then
         self:backspace()
     elseif key == "left" then
-        self:moveCarette(-1, 0, shift_held)
+        self:moveCarette(-1, 0, shift)
     elseif key == "right" then
-        self:moveCarette(1, 0, shift_held)
+        self:moveCarette(1, 0, shift)
     elseif key == "up" then
-        self:moveCarette(0, -1, shift_held)
+        self:moveCarette(0, -1, shift)
     elseif key == "down" then
-        self:moveCarette(0, 1, shift_held)
+        self:moveCarette(0, 1, shift)
     elseif key == "delete" then
         self:del()
     end

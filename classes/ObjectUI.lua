@@ -285,18 +285,24 @@ end
 
 ---Perform key press action on UI object.<br>**This function is virtual and must be defined in a child class**
 ---@param key love.KeyConstant
+---@param ctrl boolean Are any of ctrl keys (left or right) held currently
+---@param shift boolean Are any of shift keys (left or right) held currently
+---@param alt boolean Are any of alt keys (left or right) held currently
 ---@param scancode love.Scancode
 ---@param isrepeat boolean
 ---@diagnostic disable-next-line: unused-local
-function ObjectUI:keyPress(key, scancode, isrepeat)
+function ObjectUI:keyPress(key, ctrl, shift, alt, scancode, isrepeat)
 end
 
 ---Perform key release action on UI object.<br>**This function is virtual and must be defined in a child class**
 ---@param key love.KeyConstant
+---@param ctrl boolean Are any of ctrl keys (left or right) held currently
+---@param shift boolean Are any of shift keys (left or right) held currently
+---@param alt boolean Are any of alt keys (left or right) held currently
 ---@param scancode love.Scancode
 ---@param isrepeat boolean
 ---@diagnostic disable-next-line: unused-local
-function ObjectUI:keyRelease(key, scancode, isrepeat)
+function ObjectUI:keyRelease(key, ctrl, shift, alt, scancode, isrepeat)
 end
 
 ---Passes input text to the UI object.<br>**This function is virtual and must be defined in a child class**
