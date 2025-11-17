@@ -19,9 +19,12 @@ function love.load()
 
     exampleB = gui.TextField{x = "center", y = 50, font = love.graphics.newFont("font.ttf", 16), w = 350, h = 200, text = love.filesystem.read("war.txt")}
 
+    exampleC = gui.Selector{y = 400, default = 0.5}
+
     --exampleA:hide()
     gui.register(exampleA)
     gui.register(exampleB)
+    gui.register(exampleC)
 end
 
 totaldt = 0
