@@ -143,7 +143,23 @@ end
 ---@return pixels X coordinate of the object
 ---@return pixels Y coordinate of the object
 function ObjectUI:getTranslation()
-    return self.x, self.y
+	local parent = self:getParent()
+	
+	local tx, ty = self.x, self.y
+
+	if parent then
+		local ptx, pty = parent:getTranslation()
+
+		tx, ty = tx + ptx, ty + pty
+	end
+	
+    return tx, ty
+end
+
+function ObjectUI:convertGlobalCoords(gx, gy)
+	local tx, ty = self:getTranslation()
+
+	return gx - tx, gy - ty
 end
 
 ---Sets the new position of the UI object.
@@ -176,11 +192,13 @@ end
 --- Hover
 
 ---Check, if coordinates provided are in boundaries of the UI object
----@param x pixels Mouse X position in pixels
----@param y pixels Mouse Y position in pixels
+---@param gx pixels Global mouse X position in pixels
+---@param gy pixels Global mouse Y position in pixels
 ---@return ObjectUI|false hover Returns object pointer if the mouse if hovering on the object, false otherwise
-function ObjectUI:checkHover(x, y)
-    return x >= self.x and x <= self.x + self.w and y >= self.y and y <= self.y + self.h and self
+function ObjectUI:checkHover(gx, gy)
+	local tx, ty = self:getTranslation()
+
+    return gx >= tx and gx <= tx + self.w and gy >= ty and gy <= ty + self.h and self
 end
 
 ---Trigger hover-on callback when the UI object gains hover focus
@@ -247,6 +265,7 @@ end
 ---@param but number
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:doubleClick(x, y, but)
+	self:click(x, y, but)
 end
 
 ---Perform click release action on UI object<br>**This function is virtual and must be defined in a child class**
@@ -309,6 +328,14 @@ end
 ---@param text string
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:textinput(text)
+end
+
+function ObjectUI:getParent()
+	if not self.parent.state then
+		return self.parent
+	end
+
+	return nil
 end
 
 --#region Passthrough static functions

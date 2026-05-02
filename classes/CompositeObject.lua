@@ -58,13 +58,6 @@ function CompositeObject:checkHover(x, y)
     return hlObject
 end
 
----CompositeObject must return (0, 0) as its transform to let its encapsulated objects transform correctly
----@return pixels
----@return pixels
-function CompositeObject:getTranslation()
-    return 0, 0
-end
-
 function CompositeObject:unregister(message)
     local halt
 
@@ -103,9 +96,10 @@ end
 function CompositeObject:paint()
     for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
-            love.graphics.translate(uiobject:getTranslation())
+			local tx, ty = uiobject:getCoordinates()
+            love.graphics.translate(tx, ty)
             uiobject:paint()
-            love.graphics.origin()
+            love.graphics.translate(-tx, -ty)
         end
     end
 end

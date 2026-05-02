@@ -120,11 +120,11 @@ local function stellar_update(dt)
         local newCursor = DEFAULT_CURSOR
 
         if currentHl then
-            currentHl:hoverOff(x, y)
+            currentHl:hoverOff(currentHl:convertGlobalCoords(x, y))
         end
 
         if hlObject then
-            newCursor = hlObject:hoverOn(x, y) or newCursor
+            newCursor = hlObject:hoverOn(hlObject:convertGlobalCoords(x, y)) or newCursor
         end
 
         if newCursor ~= currentCursor then
@@ -148,9 +148,10 @@ local function stellar_draw()
 
     for _, registered in pairs(registeredObjects) do
         if registered:isDrawn() then
-            love.graphics.translate(registered:getTranslation())
+			local tx, ty = registered:getCoordinates()
+            love.graphics.translate(tx, ty)
             registered:paint()
-            love.graphics.origin()
+            love.graphics.translate(-tx, -ty)
         end
     end
 
@@ -328,7 +329,7 @@ end
 
 ---UI objects meta-parent, UI state can be manipulated through this object. Meant to be singleton
 ---@class StateUI : ObjectUI
-local StateUI = {}
+local StateUI = { state = true }
 
 --Volunteerly revoke focus from self and optionally give it to another object.
 ---@param origin ObjectUI
@@ -523,7 +524,7 @@ function stellar.hook(force)
                     focusedObject:gainFocus()
                 end
 
-                currentHl:click(x, y, but)
+				local cx, cy = currentHl:convertGlobalCoords(x, y)
 
                 -- Double click shenanigans
                 if
@@ -532,10 +533,12 @@ function stellar.hook(force)
                     lastClickedObject == currentHl and
                     x == lastClickPosition[1] and y == lastClickPosition[2]
                 then
-                    currentHl:doubleClick(x, y, but)
+                    currentHl:doubleClick(cx, cy, but)
                     lastClickTime = 0 -- avoid counting possible third click as double click
                     return
                 end
+
+				currentHl:click(cx, cy, but)
 
                 lastClickButton, lastClickTime, lastClickPosition[1], lastClickPosition[2], lastClickedObject = but, love.timer.getTime(), x, y, currentHl
             end
@@ -551,16 +554,18 @@ function stellar.hook(force)
 
     love.mousereleased = function (x, y, but)
         if heldObject[but] then
+			local cx, cy = heldObject[but]:convertGlobalCoords(x, y)
 
             if heldObject[but]:isInteractible() then
-                if not heldObject[but]:clickRelease(x, y, but) then
+                if not heldObject[but]:clickRelease(cx, cy, but) then
                     heldObject[but] = nil
                     return
                 end
             end
 
             if currentHl and (heldObject[but] ~= currentHl) and currentHl:isInteractible() then
-                currentHl:clickReleaseExterior(x, y, but, heldObject[but])
+				local cx, cy = currentHl:convertGlobalCoords(x, y)
+                currentHl:clickReleaseExterior(cx, cy, but, heldObject[but])
 
                 heldObject[but] = nil
                 return

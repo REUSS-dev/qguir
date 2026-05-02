@@ -84,7 +84,7 @@ function Button:clickRelease(x, y, but)
     if but == 1 then
         self.held = false
 
-        if self:checkHover(x, y) then
+        if self.hl then
             self.action()
         end
     end

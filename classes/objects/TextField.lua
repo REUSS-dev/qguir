@@ -250,8 +250,8 @@ function TextField:setScroll(x, y)
 end
 
 function TextField:translateClick(x, y)
-    x = x - self.x + self.scroll[1] - self.textX
-    y = y - self.y + self.display.lineYOffset - self.textY
+    x = x + self.scroll[1] - self.textX
+    y = y + self.display.lineYOffset - self.textY
 
     local line = math.max( self.display.beginLine + math.floor(y / self.lineHeight) , 1)
 
@@ -726,7 +726,7 @@ function TextField:tick(dt)
         end
 
         if self.selection.active then
-            local mx, my = love.mouse.getPosition()
+            local mx, my = self:convertGlobalCoords(love.mouse.getPosition())
             local char, line = self:translateClick(mx, my)
 
             self:setCarette(char, line)

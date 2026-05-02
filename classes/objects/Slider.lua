@@ -65,11 +65,13 @@ function Slider:paint()
 end
 
 function Slider:checkHoverSelector(x, y)
-    return x >= math.floor(self.x + self.selector.x - self.selector.w / 2 + 0.5) and x <= math.floor(self.x + self.selector.x + self.selector.w / 2 + 0.5) and y >= math.floor(self.y - self.selector.h / 2 + self.h / 2 + 0.5) and y <= math.floor(self.y + self.selector.h / 2 + self.h / 2 + 0.5)
+	local tx, ty = self:getTranslation()
+
+    return x >= math.floor(tx + self.selector.x - self.selector.w / 2 + 0.5) and x <= math.floor(tx + self.selector.x + self.selector.w / 2 + 0.5) and y >= math.floor(ty - self.selector.h / 2 + self.h / 2 + 0.5) and y <= math.floor(ty + self.selector.h / 2 + self.h / 2 + 0.5) and self
 end
 
 function Slider:checkHover(x, y)
-    return uiobj.class.checkHover(self, x, y) or self:checkHoverSelector(x, y) and self
+    return uiobj.class.checkHover(self, x, y) or self:checkHoverSelector(x, y)
 end
 
 function Slider:click(x, y, but)
@@ -77,12 +79,12 @@ function Slider:click(x, y, but)
         self.held = true
 
         if not self:checkHoverSelector(x, y) then
-            local new_selector_x = x - self.x
+            local new_selector_x = x
 
             self:setValue(new_selector_x / self.w)
         end
 
-        self.selector.clickedX = x
+        self.selector.clickedX = x + (self:getTranslation())
         self.selector.previousX = self.selector.x
     end
 end
