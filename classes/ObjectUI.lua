@@ -5,7 +5,9 @@ local uiobj = {}
 
 -- documentation
 
-
+---@alias ResolutiionValue "hug"|"fill"|number
+---@alias FourSides {[1]: number, [2]: number, [3]: number, [4]: number}
+---@alias LayoutProperties {w: ResolutiionValue, h: ResolutiionValue, minW: number?, maxW: number?, minY: number?, maxY: number?, padding: FourSides}
 
 -- config
 
@@ -44,6 +46,7 @@ uiobj.rules = {}
 ---@field protected palette Palette UI object color palette ( ---@todo temporary?)
 ---@field protected parent CompositeObject|StateUI UI object parent (StateUI object of stellarapi, if born manually, or parenting CompositeObject)
 ---@field protected defaultCursor (love.Cursor|string)? Optional parameter. Cursor set when hoverOn of UI object triggers
+---@field protected layout LayoutProperties
 local ObjectUI = {}
 local ObjectUI_meta = {__index = ObjectUI}
 

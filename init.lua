@@ -7,7 +7,6 @@ local selfpath = (...):match("^(.*%.?[^.]+)$"):gsub("%.", "/")
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. love.filesystem.getRequirePath():gsub("(%?%.lua)", selfpath .. "/%1"))
 print(love.filesystem.getRequirePath())
 
-local ffi = require("ffi")
 local utf = require("utf8")
 
 local paletteClass = require("classes.Palette")
@@ -89,6 +88,8 @@ setmetatable(cursorStorage, {
 --- Figuring out the doubleclick time
 
 if love.system.getOS() == "Windows" then
+	local ffi = require("ffi")
+
     ffi.cdef[[
         uint32_t GetDoubleClickTime();
     ]]
@@ -162,52 +163,53 @@ end
 
 ---Parser for object width and height.<br>Will parse size (ex. width = 200, height = 100) correctly if it is defined in the definition table as any of following:<br>{0, 0, 200, 100}<br>{"objectName", 0, 0, 200, 100}<br>{w = 200, h = 100}<br>{width = 200, height = 100}<br>{ size = {200, 100} }
 ---@type ObjectParser
-function definition_parsers.sizeRectangular(def, sink)
-    local width = sink.w or def.w or def.width or (def.size or {})[1] or (type(def[1]) == "number") and def[3] or (type(def[2]) == "number") and def[4]
-    local height = sink.h or def.h or def.height or (def.size or {})[2] or (type(def[1]) == "number") and def[4] or (type(def[2]) == "number") and def[5]
+function definition_parsers.layout(def, sink)
+	layout = sink.layout or {}
 
-    sink.w = width
-    sink.h = height
+    local width = layout.w or def.w or def.width or (def.size or {})[1]
+    local height = layout.h or def.h or def.height or (def.size or {})[2]
+    layout.w = width
+    layout.h = height
 
-    if not width or not height then
-        return false
-    end
+	local minw = layout.minW or def.minW or (def.min or {})[1]
+	local minh = layout.minH or def.minH or (def.min or {})[2]
+	layout.minW = minw
+	layout.minH = minh
 
-    return true
-end
+	local maxw = layout.maxW or def.maxW or (def.max or {})[1]
+	local maxh = layout.maxH or def.maxH or (def.max or {})[2]
+	layout.maxW = maxw
+	layout.maxH = maxh
 
----Parser for object position on the screen.<br>Will parse position (ex. x = 200, y = 100) correctly if it is defined in the definition table as any of following:<br>{200, 100}<br>{"objectName", 200, 100}<br>{x = 200, y = 100}<br>{horizontal = 200, vertical = 100}<br>{ position = {200, 100} }<br>{ pos = {200, 100} }<br>{ coordinates = {200, 100} }<br>**Also supports setting one of the dimensions to the string<br>"center"/"centered"/"middle"/"mid" (any of the following) to center object's position based on its size.<br>Also supports negative coordinates.<br>Position of the object will be counted from the other edge of screen in this case (respecting object's size)**
----@type ObjectParser
-function definition_parsers.position(def, sink)
-    local x = sink.x or def.x or def.horizontal or (def.position or {})[1] or (def.pos or {})[1] or (def.coordinates or {})[1] or (type(def[1]) == "number") and def[1] or (type(def[2]) == "number") and def[2]
-    local y = sink.y or def.y or def.vertical or (def.position or {})[2] or (def.pos or {})[2] or (def.coordinates or {})[2] or (type(def[1]) == "number") and def[2] or (type(def[2]) == "number") and def[3]
+	local padding = def.padding
 
-    local sw, sh = love.graphics.getWidth(), love.graphics.getHeight()
+	if padding then
+		if type(padding) == "number" then
+			padding = {padding, padding, padding, padding}
+		elseif type(padding) == "table" then
+			if #padding == 1 then
+				padding = {padding[1], padding[1], padding[1], padding[1]}
+			elseif #padding == 2 then
+				padding = {padding[2], padding[1], padding[2], padding[1]}
+			elseif #padding == 3 then
+				padding = {padding[2], padding[1], padding[2], padding[3]}
+			elseif #padding >= 4 then
+				padding = {padding[1], padding[2], padding[3], padding[4]}
+			else
+				padding = nil
+			end
+		end
+	end
 
-    if type(x) == "string" then
-        if x == "center" or x == "centered" or x == "middle" or x == "mid" then
-            x = math.floor(sw/2-sink.w/2)
-        else
-            x = nil
-        end
-    elseif x and x < 0 then
-        x = sw - sink.w + x
-    end
+	layout.padding = padding
 
-    if type(y) == "string" then
-        if y == "center" or y == "centered" or y == "middle" or y == "mid" then
-            y = math.floor(sh/2-sink.h/2)
-        else
-            y = nil
-        end
-    elseif y and y < 0 then
-        y = sh - sink.h + y
-    end
+	if sink.layout then
+		layout.padding = layout.padding or {0, 0, 0, 0}
+	end
 
-    sink.x = x
-    sink.y = y
+	sink.layout = layout
 
-    if not x or not y then
+    if not layout.w or not layout.h or not layout.padding then
         return false
     end
 
