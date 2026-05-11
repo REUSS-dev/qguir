@@ -5,9 +5,7 @@ local uiobj = {}
 
 -- documentation
 
----@alias ResolutiionValue "hug"|"fill"|number
----@alias FourSides {[1]: number, [2]: number, [3]: number, [4]: number}
----@alias LayoutProperties {w: ResolutiionValue, h: ResolutiionValue, minW: number?, maxW: number?, minY: number?, maxY: number?, padding: FourSides}
+
 
 -- config
 
@@ -44,7 +42,7 @@ uiobj.rules = {}
 ---@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
 ---@field protected palette Palette UI object color palette ( ---@todo temporary?)
----@field protected parent CompositeObject|StateUI UI object parent (StateUI object of stellarapi, if born manually, or parenting CompositeObject)
+---@field protected parent CompositeObject UI object parent
 ---@field protected defaultCursor (love.Cursor|string)? Optional parameter. Cursor set when hoverOn of UI object triggers
 ---@field protected layout LayoutProperties
 local ObjectUI = {}
@@ -334,11 +332,7 @@ function ObjectUI:textinput(text)
 end
 
 function ObjectUI:getParent()
-	if not self.parent.state then
-		return self.parent
-	end
-
-	return nil
+	return self.parent
 end
 
 --#region Passthrough static functions

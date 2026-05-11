@@ -19,8 +19,7 @@ local utf = require("utf8")
 textfield.name = "TextField"
 textfield.aliases = {}
 textfield.rules = {
-    {"sizeRectangular", {0, 0, 100, 50}},
-    {"position", {position = {"center", "center"}}},
+    {"layout", {w = 100, h = 50}},
 
     {"palette", {colors = {{1, 1, 1, 1}, {0, 0, 0, 1}, {0.5, 0.5, 0.5, 1}, {0.2, 0.2, 0.6, 0.8}}}},
 

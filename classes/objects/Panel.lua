@@ -12,8 +12,7 @@ local uiobj = require("classes.ObjectUI")
 panel.name = "Panel"
 panel.aliases = {}
 panel.rules = {
-    {"sizeRectangular", {0, 0, love.graphics.getWidth(), love.graphics.getHeight()}},
-    {"position", {position = {0, 0}}},
+    {"layout", {w = "fill", h = "fill"}},
 
     {"palette", {color = {1, 1, 1, 1}}},
     {{"r", "radius", "rounding", "round"}, "r", nil}

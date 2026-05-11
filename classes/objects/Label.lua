@@ -11,16 +11,6 @@ local utf = require("utf8")
 
 -- config
 
-local function label_size_rule(_, sink)
-    if not sink.h then
-        sink.h = sink.font:getHeight()
-    end
-
-    if not sink.w then
-        sink.w = sink.font:getWidth(sink.text)
-    end
-end
-
 label.name = "Label"
 label.aliases = {}
 label.rules = {
@@ -28,9 +18,7 @@ label.rules = {
     {{"align"}, "align", "left"},
     {{"font"}, "font", love.graphics.getFont()},
 
-    "sizeRectangular",
-    label_size_rule,
-    {"position", {position = {"center", "center"}}},
+    {"layout", {w = "hug", h = "hug"}},
 
     {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}}},
 }

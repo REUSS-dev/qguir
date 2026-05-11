@@ -1,20 +1,17 @@
 -- stellar
 local stellar = {}
 
-print((...):match("^(.*%.?[^.]+)$"):gsub("%.", "/"))
-
 local selfpath = (...):match("^(.*%.?[^.]+)$"):gsub("%.", "/")
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. love.filesystem.getRequirePath():gsub("(%?%.lua)", selfpath .. "/%1"))
-print(love.filesystem.getRequirePath())
 
 local utf = require("utf8")
 
+local composite = require("classes.CompositeObject")
 local paletteClass = require("classes.Palette")
 
 -- documentation
 
 ---@meta
----@diagnostic disable
 
 ---@alias pixels number Amount of pixels.
 ---@alias seconds number Amount of seconds
@@ -25,10 +22,14 @@ local paletteClass = require("classes.Palette")
 ---@alias ObjectDefinition table Table, which contains UI object definition fields, and is to be processed by UI object definition Parser
 ---@alias ObjectParser fun(definition: ObjectDefinition, sink: ObjectPrototype):boolean A function, that processes UI object definition and outputs prepared parameters into sink. If it fails to process given definition, it will return false.
 ---@alias ObjectParserName string
----@alias ObjectParsingRule ObjectParserName|function|{[1]: ObjectParserName, [2]: ObjectDefinition}|{[1]: string[], [2]: string, [3]: ObjectDefinition, [4]: ParsingRule[]?}
+---@alias ObjectParsingRule ObjectParserName|function|{[1]: ObjectParserName, [2]: ObjectDefinition}|{[1]: string[], [2]: string, [3]: ObjectDefinition, [4]: ObjectParserName[]?}
 ---@alias ObjectPrototype table Table, which contains valid object keys and parameters. Usually returned from parseDefinition
 
----@alias registeredIndex number Index of the registered UI object that it can be referenced by in lib functions
+---@alias ResolutiionValue "hug"|"fill"|number
+---@alias GrowthVariants "vertical"|"horizontal"
+---@alias AlignmentVariants "left"|"center"|"right"
+---@alias FourSides {[1]: number, [2]: number, [3]: number, [4]: number}
+---@alias LayoutProperties {w: ResolutiionValue, h: ResolutiionValue, minW: number?, maxW: number?, minY: number?, maxY: number?, padding: FourSides, growth: GrowthVariants, horizontal: AlignmentVariants, vertical: AlignmentVariants, ignore: boolean?, gap: number}
 
 -- config
 
@@ -36,10 +37,15 @@ local externalTypesDir = selfpath .. "/classes/objects"
 
 -- consts
 
-local PATTERN_FILENAME = "[^\\/]+$"
-
 local DEFAULT_CURSOR = "arrow"
 local DEFAULT_DOUBLE_CLICK_TIME = 0.5
+
+local DEFAULT_GROWTH = "vertical"
+local DEFAULT_ALIGNMENT_HORIZONTAL = "central"
+local DEFAULT_ALIGNMENT_VERTICAL = "central"
+local DEFAULT_GAP = 10
+
+local CANVAS_DEFAULT_PADDING = {15, 15, 15, 15}
 
 -- vars
 
@@ -51,12 +57,12 @@ local object_descriptors = {}       ---@type table<string, ObjectDescriptor>
 local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
 local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cursor}
 
-local registeredObjects = {}        ---@type {[registeredIndex]: ObjectUI} Currently registered objects in the system that are eligible for update and draw.
-local registeredAssociative = {}    ---@type {[ObjectUI]: registeredIndex} Associative array of registered objects used to get registration index by object reference
+local current_canvas				---@type CanvasObject
+local canvases = {}					---@type CanvasObject[]
 
-local currentHl                     ---@type ObjectUI UI object mouse cursor currently on
-local heldObject = {}               ---@type ObjectUI UI object last mousepressed event was on (table element for every mouse button)
-local focusedObject                 ---@type ObjectUI UI object that currently has keyboard focus
+local currentHl                     ---@type ObjectUI? UI object mouse cursor currently on
+local heldObject = {}               ---@type table<integer, ObjectUI> UI object last mousepressed event was on (table element for every mouse button)
+local focusedObject                 ---@type ObjectUI? UI object that currently has keyboard focus
 
 local hooked
 
@@ -67,8 +73,6 @@ local lastClickTime, lastClickButton, lastClickPosition, lastClickedObject = 0, 
 
 local love = love -- НЕ УДАЛЯТЬ. Предотвращает варнинги в других местах, где объявляются коллбеки love
 local nopFunc = function() end
-
-setmetatable(registeredAssociative, {__mode = 'k'})
 
 setmetatable(stellar, {
     __index = function (self, key)
@@ -107,13 +111,9 @@ end
 ---Standard update function for the functionality of StellarGUI
 ---@param dt seconds
 local function stellar_update(dt)
-    local hlObject
-
     local x, y = love.mouse.getX(), love.mouse.getY()
 
-    for _, registered in pairs(registeredObjects) do
-        hlObject = registered:isActive() and registered:checkHover(x, y) or hlObject
-    end
+	local hlObject = current_canvas:isActive() and current_canvas:checkHover(x, y)
 
     ---@cast hlObject ObjectUI?
 
@@ -136,25 +136,14 @@ local function stellar_update(dt)
         currentHl = hlObject
     end
 
-    for _, registered in pairs(registeredObjects) do
-        if registered:isActive() then
-            registered:tick(dt)
-        end
-    end
+	current_canvas:tick(dt)
 end
 
 ---Standard draw function for the functionality of StellarGUI
 local function stellar_draw()
     love.graphics.push("transform")
 
-    for _, registered in pairs(registeredObjects) do
-        if registered:isDrawn() then
-			local tx, ty = registered:getCoordinates()
-            love.graphics.translate(tx, ty)
-            registered:paint()
-            love.graphics.translate(-tx, -ty)
-        end
-    end
+    current_canvas:paint()
 
     love.graphics.pop()
 end
@@ -203,8 +192,20 @@ function definition_parsers.layout(def, sink)
 
 	layout.padding = padding
 
+	layout.growth = layout.growth or def.growth
+	layout.horizontal = layout.horizontal or def.horizontal
+	layout.vertical = layout.vertical or def.vertical
+	layout.gap = layout.gap or def.gap
+
+	layout.ignore = layout.ignore or def.ignoreLayout or def.ignore_layout or def.static
+
 	if sink.layout then
 		layout.padding = layout.padding or {0, 0, 0, 0}
+
+		layout.growth = layout.growth or DEFAULT_GROWTH
+		layout.horizontal = layout.horizontal or DEFAULT_ALIGNMENT_HORIZONTAL
+		layout.vertical = layout.vertical or DEFAULT_ALIGNMENT_VERTICAL
+		layout.gap = layout.gap or DEFAULT_GAP
 	end
 
 	sink.layout = layout
@@ -329,14 +330,17 @@ end
 
 -- classes
 
+--#region Canvas class
+
 ---UI objects meta-parent, UI state can be manipulated through this object. Meant to be singleton
----@class StateUI : ObjectUI
-local StateUI = { state = true }
+---@class CanvasObject : CompositeObject
+local CanvasObject = { canvas = true }
+setmetatable(CanvasObject, composite.class)
 
 --Volunteerly revoke focus from self and optionally give it to another object.
 ---@param origin ObjectUI
 ---@param successor ObjectUI?
-function StateUI:revokeFocus(origin, successor)
+function CanvasObject:revokeFocus(origin, successor)
     if focusedObject == origin then
         focusedObject:loseFocus()
         
@@ -350,7 +354,7 @@ end
 ---Change current system cursor type
 ---@param origin ObjectUI
 ---@param type love.CursorType?
-function StateUI:setCursor(origin, type)
+function CanvasObject:setCursor(origin, type)
     type = type or DEFAULT_CURSOR
 
     if type ~= currentCursor then
@@ -359,68 +363,68 @@ function StateUI:setCursor(origin, type)
     end
 end
 
----Volunteerly unregister origin object
----@param origin ObjectUI
-function StateUI:unregisterMyself(origin)
-    stellar.unregister(origin)
+local function newCanvas(protoype)
+	protoype.x = protoype.x or 0
+	protoype.y = protoype.y or 0
+
+	local width = protoype.w or love.graphics.getWidth()
+	local height = protoype.h or love.graphics.getHeight()
+	protoype.layout = {
+		w = width,
+		h = height,
+		padding = protoype.padding or CANVAS_DEFAULT_PADDING,
+
+		growth = protoype.growth or "vertical",
+		horizontal = protoype.horizontal or "center",
+		vertical = protoype.vertical or "center"
+	}
+
+	local obj = composite.new(protoype)
+
+	setmetatable(obj, {__index = CanvasObject})
+
+	return obj
 end
+
+--#endregion
 
 -- stellar fnc
 
----Register the UI object descriptor in a system for update and draw
----@param uiobj ObjectUI A UI object to register
----@return registeredIndex index Index of a registered UI object that it can be referenced by in other functions
-function stellar.register(uiobj)
-    local newIndex = #registeredObjects+1
+--#region Canvas manipulation
 
-    uiobj.parent = StateUI
-
-    registeredAssociative[uiobj] = newIndex
-    registeredObjects[newIndex] = uiobj
-
-    return newIndex
+function stellar.createCanvas(prototype)
+	return newCanvas(prototype)
 end
 
----Unregister the UI object descriptor in a system by object pointer or registeredIndex
----@param uiobj ObjectUI|registeredIndex A UI object/index to unregister
----@param message string Unregister message
----@see ObjectUI.unregister for ui object unregister behavior
-function stellar.unregister(uiobj, message)
-    local registeredIndex
-
-    if type(uiobj) == "table" then
-        registeredIndex = registeredAssociative[uiobj]
-
-        if not registeredIndex then
-            return false
-        end
-    elseif type(uiobj) == "number" then
-        if registeredObjects[uiobj] then
-            registeredIndex = uiobj
-        else
-            return false
-        end
-    else
-        return false
-    end
-
-    if not registeredObjects[registeredIndex] then
-        return false
-    end
-
-    if not registeredObjects[registeredIndex]:unregister() then
-        registeredObjects[registeredIndex] = nil
-    end
-
-    return true
+function stellar.getCanvas()
+	return current_canvas
 end
 
----Unregisters all objects from the system
-function stellar.unregisterAll()
-    for i, _ in pairs(registeredObjects) do
-        stellar.unregister(i)
-    end
+function stellar.setCanvas(canvas)
+	if type(canvas) == "table" then
+		current_canvas = canvas
+	else
+		current_canvas = canvases[canvas]
+	end
 end
+
+function stellar.storeCanvas(name, canvas)
+	canvases[name] = canvas
+end
+
+--#endregion
+
+--#region Current canvas operations
+
+function stellar.add(object)
+	current_canvas:add(object)
+end
+
+function stellar.remove(object)
+	current_canvas:remove(object)
+end
+
+--#endregion
 
 function stellar.loadExternalObjects(path)
     local path = path or externalTypesDir
@@ -622,6 +626,9 @@ function stellar.hook(force)
     end
 
     hooked = true
+
+	local new_canvas = newCanvas()
+	canvases[1] = new_canvas
 
     return stellar
 end

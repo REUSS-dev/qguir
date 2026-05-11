@@ -14,8 +14,7 @@ local utf = require("utf8")
 button.name = "Button"
 button.aliases = {}
 button.rules = {
-    {"sizeRectangular", {0, 0, 100, 50}},
-    {"position", {position = {"center", "center"}}},
+    {"layout", {w = 100, h = 50}},
 
     {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}}},
 

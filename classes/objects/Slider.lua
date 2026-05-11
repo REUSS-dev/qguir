@@ -14,8 +14,7 @@ local default_width, default_height = 20, 20
 slide.name = "Slider"
 slide.aliases = {"Selector"}
 slide.rules = {
-    {"sizeRectangular", {0, 0, 200, 10}},
-    {"position", {position = {"center", "center"}}},
+    {"layout", {w = 200, h = 10}},
 
     {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {0, 0.4, 0.2, 1}, additionalColor = {1, 1, 1, 0.4}}},
     {{"slider", "selector"}, "selector", {width = default_width, height = default_height}, {"sizeRectangular"}},
