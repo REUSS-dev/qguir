@@ -27,9 +27,10 @@ local paletteClass = require("classes.Palette")
 
 ---@alias ResolutiionValue "hug"|"fill"|number
 ---@alias GrowthVariants "vertical"|"horizontal"
----@alias AlignmentVariants "left"|"center"|"right"
+---@alias HorizontalAlignmentVariants "left"|"center"|"right"
+---@alias VerticalAlignmentVariants "top"|"center"|"bottom"
 ---@alias FourSides {[1]: number, [2]: number, [3]: number, [4]: number}
----@alias LayoutProperties {w: ResolutiionValue, h: ResolutiionValue, minW: number?, maxW: number?, minY: number?, maxY: number?, padding: FourSides, growth: GrowthVariants, horizontal: AlignmentVariants, vertical: AlignmentVariants, ignore: boolean?, gap: number}
+---@alias LayoutProperties {w: ResolutiionValue, h: ResolutiionValue, padding: FourSides, growth: GrowthVariants, horizontal: HorizontalAlignmentVariants, vertical: VerticalAlignmentVariants, ignore: boolean?, gap: number}
 
 -- config
 
@@ -41,10 +42,11 @@ local DEFAULT_CURSOR = "arrow"
 local DEFAULT_DOUBLE_CLICK_TIME = 0.5
 
 local DEFAULT_GROWTH = "vertical"
-local DEFAULT_ALIGNMENT_HORIZONTAL = "central"
-local DEFAULT_ALIGNMENT_VERTICAL = "central"
+local DEFAULT_ALIGNMENT_HORIZONTAL = "center"
+local DEFAULT_ALIGNMENT_VERTICAL = "center"
 local DEFAULT_GAP = 10
 
+local CANVAS_DEFAULT_GAP = DEFAULT_GAP
 local CANVAS_DEFAULT_PADDING = {15, 15, 15, 15}
 
 -- vars
@@ -160,16 +162,6 @@ function definition_parsers.layout(def, sink)
     layout.w = width
     layout.h = height
 
-	local minw = layout.minW or def.minW or (def.min or {})[1]
-	local minh = layout.minH or def.minH or (def.min or {})[2]
-	layout.minW = minw
-	layout.minH = minh
-
-	local maxw = layout.maxW or def.maxW or (def.max or {})[1]
-	local maxh = layout.maxH or def.maxH or (def.max or {})[2]
-	layout.maxW = maxw
-	layout.maxH = maxh
-
 	local padding = def.padding
 
 	if padding then
@@ -190,7 +182,7 @@ function definition_parsers.layout(def, sink)
 		end
 	end
 
-	layout.padding = padding
+	layout.padding = layout.padding or padding
 
 	layout.growth = layout.growth or def.growth
 	layout.horizontal = layout.horizontal or def.horizontal
@@ -206,15 +198,13 @@ function definition_parsers.layout(def, sink)
 		layout.horizontal = layout.horizontal or DEFAULT_ALIGNMENT_HORIZONTAL
 		layout.vertical = layout.vertical or DEFAULT_ALIGNMENT_VERTICAL
 		layout.gap = layout.gap or DEFAULT_GAP
+
+		return true
 	end
 
 	sink.layout = layout
 
-    if not layout.w or not layout.h or not layout.padding then
-        return false
-    end
-
-    return true
+    return false
 end
 
 function definition_parsers.palette(def, sink)
@@ -334,8 +324,8 @@ end
 
 ---UI objects meta-parent, UI state can be manipulated through this object. Meant to be singleton
 ---@class CanvasObject : CompositeObject
-local CanvasObject = { canvas = true }
-setmetatable(CanvasObject, composite.class)
+local CanvasObject = { parent = true }
+setmetatable(CanvasObject, {__index = composite.class})
 
 --Volunteerly revoke focus from self and optionally give it to another object.
 ---@param origin ObjectUI
@@ -363,7 +353,18 @@ function CanvasObject:setCursor(origin, type)
     end
 end
 
+function CanvasObject:getTranslation()
+	return 0, 0
+end
+
+function CanvasObject:resize(new_w, new_h)
+	self.w = new_w
+	self.h = new_h
+end
+
 local function newCanvas(protoype)
+	protoype = protoype or {}
+
 	protoype.x = protoype.x or 0
 	protoype.y = protoype.y or 0
 
@@ -375,6 +376,7 @@ local function newCanvas(protoype)
 		padding = protoype.padding or CANVAS_DEFAULT_PADDING,
 
 		growth = protoype.growth or "vertical",
+		gap = protoype.gap or CANVAS_DEFAULT_GAP,
 		horizontal = protoype.horizontal or "center",
 		vertical = protoype.vertical or "center"
 	}
@@ -382,6 +384,8 @@ local function newCanvas(protoype)
 	local obj = composite.new(protoype)
 
 	setmetatable(obj, {__index = CanvasObject})
+
+	obj:autolayout()
 
 	return obj
 end
@@ -483,6 +487,10 @@ function stellar.drawMousePosition()
         text = text .. " <SHIFT>"
     end
 
+	if currentHl then
+		text = "UI object" .. "\n" .. text
+	end
+
     love.graphics.print(text, love.mouse.getX(), love.mouse.getY() - love.graphics.getFont():getHeight())
     love.graphics.print(text, 0, 0)
 end
@@ -504,7 +512,7 @@ function stellar.hook(force)
 
     --- Set up callbacks
     
-    local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc
+    local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput, love_resize = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc, love.resize or nopFunc
 
     love.update = function(dt)
         love_update(dt)
@@ -625,10 +633,20 @@ function stellar.hook(force)
         end
     end
 
+	love.resize = function (w, h)
+		for _, canvas in pairs(canvases) do
+			canvas.layout.w, canvas.layout.h = w, h
+			canvas:autolayout()
+		end
+
+		love_resize(w, h)
+	end
+
     hooked = true
 
-	local new_canvas = newCanvas()
-	canvases[1] = new_canvas
+	local new_canvas = stellar.createCanvas()
+	stellar.storeCanvas(1, new_canvas)
+	stellar.setCanvas(1)
 
     return stellar
 end

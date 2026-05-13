@@ -190,6 +190,60 @@ function ObjectUI:getHeight()
     return self.h
 end
 
+function ObjectUI:resize(new_w, new_h)
+	self.w = new_w
+	self.h = new_h
+	
+	self.parent:relayout()
+end
+
+---Perform autolayout width and height calculations
+---@param fill_w number? Width value to be used if width parameter is FILL
+---@param fill_h number? Height value to be used if height parameter is FILL
+---@return number? width Calculated object width
+---@return number?
+function ObjectUI:autolayout(fill_w, fill_h)
+	local layout = self.layout
+
+	-- Width calculation
+
+	local w
+
+	if type(layout.w) == "number" then
+		w = layout.w --[[@as number]]
+	elseif layout.w == "fill" then
+		if self.parent.layout.growth == "horizontal" and self.parent.layout.w == "hug" then
+			error("\"fill\" width object inside \"hug\" width horizontal growth container")
+		end
+
+		w = fill_w
+	end
+
+	-- Height calculation
+
+	local h
+
+	if type(layout.h) == "number" then
+		h = layout.h --[[@as number]]
+	elseif layout.h == "fill" then
+		if self.parent.layout.growth == "vertical" and self.parent.layout.h == "hug" then
+			error("\"fill\" height object inside \"hug\" height vertical growth container")
+		end
+
+		h = fill_h
+	end
+
+	-- Resize if necessary
+
+	if w and h then
+		if w ~= self.w or h ~= self.h then
+			self:resize(w, h)
+		end
+	end
+
+	return w, h
+end
+
 --- Hover
 
 ---Check, if coordinates provided are in boundaries of the UI object
