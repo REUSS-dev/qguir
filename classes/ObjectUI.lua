@@ -43,7 +43,7 @@ uiobj.rules = {}
 ---@field protected interactible boolean Flag, if the UI object is interactible by any means.
 ---@field protected palette Palette UI object color palette ( ---@todo temporary?)
 ---@field protected parent CompositeObject UI object parent
----@field protected defaultCursor (love.Cursor|string)? Optional parameter. Cursor set when hoverOn of UI object triggers
+---@field protected defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
 ---@field protected layout LayoutProperties
 local ObjectUI = {}
 local ObjectUI_meta = {__index = ObjectUI}
@@ -259,7 +259,7 @@ end
 ---Trigger hover-on callback when the UI object gains hover focus
 ---@param x pixels Mouse X position in pixels
 ---@param y pixels Mouse Y position in pixels
----@return (string|love.Cursor)? cursorState Name of cursor type or cursor object to be used after hovering on this object.
+---@return string? cursorState Name of cursor type or cursor object to be used after hovering on this object.
 ---@todo TODO-3 Make ObjectUI:hoverOn return field of UI object that contains its cursorState
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:hoverOn(x, y)

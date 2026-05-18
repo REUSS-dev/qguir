@@ -23,6 +23,7 @@ local colorNames = {
     fg = 1,
     foreground = 1,
     main = 1,
+	fill = 1,
 
     ---@see ColorIndex 2 - Text color
     2,
@@ -33,6 +34,7 @@ local colorNames = {
     additional = 3,
     background = 3,
     bg = 3,
+	border = 3,
     frame = 3,
     hl = 3,
 }

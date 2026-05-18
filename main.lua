@@ -8,16 +8,17 @@ function love.load()
     gui = require("init").hook()
     gui.loadExternalObjects("classes")
 
-	DEBUG = true
-
 	gui.getCanvas().layout.growth = "horizontal"
 	gui.getCanvas().layout.padding[2] = 80
+	gui.getCanvas().layout.padding[2] = 80
 
-    local box1 = gui.CompositeObject{w = "fill", h = 75}
+	DEBUG = true
 
-	local box2 = gui.CompositeObject{w = "fill", h = "fill"}
+    local box1 = gui.Container{w = "fill", h = 75}
 
-	local left_container = gui.CompositeObject{
+	local box2 = gui.Container{w = "fill", h = "fill"}
+
+	local left_container = gui.Container{
 		w = 300,
 		h = "fill",
 		padding = {0, 100, 0, 50},
@@ -28,12 +29,18 @@ function love.load()
 	left_container:add(box1)
 	left_container:add(box2)
 
-	local main_container = gui.CompositeObject{
+	local main_container = gui.Container{
 		w = "fill",
 		h = "fill",
 		growth = "vertical",
 		horizontal = "right",
-		vertical = "top"
+		vertical = "top",
+		colors = {
+			fill = {0.5, 0, 0, 0.5},
+			border = {0.5, 0.5, 1, 0.5}
+		},
+		border_size = 10,
+		r = 40
 	}
 	
 	gui.add(left_container)

@@ -10,8 +10,13 @@ local uiobj = require("classes.ObjectUI")
 -- config
 
 composite.name = "CompositeObject"
-composite.aliases = {"Composite"}
-composite.rules = { {"layout", {w = "hug", h = "hug"}} }
+composite.aliases = {"Composite", "Container"}
+composite.rules = {
+	{"layout", {w = "hug", h = "hug"}},
+	"palette",
+	{{"r", "radius"}, "r", 0},
+	{{"bsize", "border_size", "borderSize"}, "bsize", 5}
+}
 
 -- consts
 
@@ -33,6 +38,10 @@ composite.rules = { {"layout", {w = "hug", h = "hug"}} }
 
 ---@class CompositeObject : ObjectUI
 ---@field objects ObjectUI[] List of UI objects inside the composite object
+---@field fill_flag boolean
+---@field border_flag boolean
+---@field bsize number
+---@field r number
 local CompositeObject = {}
 local CompositeObject_meta = {__index = CompositeObject}
 
@@ -94,6 +103,21 @@ end
 
 ---Paint all UI objects in a composite object.
 function CompositeObject:paint()
+	if self.fill_flag then
+		love.graphics.setColor(self.palette.main)
+		love.graphics.rectangle("fill", 0, 0, self.w, self.h, self.r)
+	end
+
+	if self.border_flag then
+		local old_bsize = love.graphics.getLineWidth()
+		love.graphics.setLineWidth(self.bsize)
+
+		love.graphics.setColor(self.palette.border)
+		love.graphics.rectangle("line", 0, 0, self.w, self.h, self.r)
+
+		love.graphics.setLineWidth(old_bsize)
+	end
+
     for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
 			local tx, ty = uiobject:getCoordinates()
@@ -502,6 +526,9 @@ function composite.new(prototype)
     obj.objects = {}
 
     setmetatable(obj, CompositeObject_meta)
+	
+	obj.fill_flag = obj.palette.main and true or false
+	obj.border_flag = obj.palette.border and true or false
 
     return obj
 end
