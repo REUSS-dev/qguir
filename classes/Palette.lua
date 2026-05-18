@@ -78,7 +78,7 @@ function Palette_meta:__index(key)
     local colorindex = colorNames[key]
 
     if colorindex then
-        return self.container[colorindex] or self.container[1]
+        return self.container[colorindex]
     else
         return Palette[key]
     end
