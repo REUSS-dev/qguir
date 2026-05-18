@@ -16,7 +16,7 @@ button.aliases = {}
 button.rules = {
     {"layout", {w = 100, h = 50}},
 
-    {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}}},
+    {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}, additionalColor = {0, 0.5, 0, 0.4}}},
 
     {{"action", "push", "press"}, "action", function() end},
     {{"text", "label"}, "text", "Button"},
