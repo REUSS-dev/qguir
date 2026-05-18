@@ -14,7 +14,7 @@ function love.load()
 
 	DEBUG = true
 
-    local box1 = gui.Container{w = "fill", h = 75}
+    local box1 = gui.Button{w = "fill", h = 75}
 
 	local box2 = gui.Container{w = "fill", h = "fill"}
 

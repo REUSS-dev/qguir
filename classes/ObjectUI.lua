@@ -197,11 +197,19 @@ function ObjectUI:resize(new_w, new_h)
 	self.parent:relayout()
 end
 
+--#region Layout
+
+---Whether a UI object should be processed during autolayout
+---@return boolean 
+function ObjectUI:canLayout()
+	return self.draw and not self.layout.ignore
+end
+
 ---Perform autolayout width and height calculations
 ---@param fill_w number? Width value to be used if width parameter is FILL
 ---@param fill_h number? Height value to be used if height parameter is FILL
 ---@return number? width Calculated object width
----@return number?
+---@return number? height Calculated object height
 function ObjectUI:autolayout(fill_w, fill_h)
 	local layout = self.layout
 
@@ -243,6 +251,8 @@ function ObjectUI:autolayout(fill_w, fill_h)
 
 	return w, h
 end
+
+--#endregion
 
 --- Hover
 

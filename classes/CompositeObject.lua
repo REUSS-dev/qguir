@@ -160,6 +160,27 @@ function CompositeObject:remove(to_remove)
     end
 end
 
+--#region Layout
+
+function CompositeObject:setGrowth(new_growth)
+	if new_growth ~= self.layout.growth then
+		self.layout.growth = new_growth
+		self:relayout()
+	end
+end
+
+function CompositeObject:setPadding(left, top, right, bottom)
+	if type(left) == "table" then
+		assert(left[1] and left[2] and left[3] and left[4], "Padding table must contain data for all 4 sides")
+		self.layout.padding = left
+	else
+		self.layout.padding[1] = left or self.layout.padding[1]
+		self.layout.padding[2] = top or self.layout.padding[2]
+		self.layout.padding[3] = right or self.layout.padding[3]
+		self.layout.padding[4] = bottom or self.layout.padding[4]
+	end
+end
+
 function CompositeObject:relayout()
 	if not self.parent then
 		return
@@ -196,7 +217,7 @@ function CompositeObject:autolayout(free_w, free_h)
 	local layout_object_count = 0
 
 	for i, object in ipairs(self.objects) do
-		if not object.layout.ignore then
+		if object:canLayout() then
 			local ow, oh = object:autolayout(internal_w, internal_h)
 
 			object_sizes[i] = {ow, oh}
@@ -313,7 +334,7 @@ function CompositeObject:autolayout(free_w, free_h)
 	-- Second pass
 	if layout.growth == "horizontal" then
 		for i, object in ipairs(self.objects) do
-			if not object.layout.ignore then
+			if object:canLayout() then
 				local ow, oh = object:autolayout(primary_fills[i], internal_h)
 
 				object_sizes[i] = {ow, oh}
@@ -323,7 +344,7 @@ function CompositeObject:autolayout(free_w, free_h)
 		end
 	elseif layout.growth == "vertical" then
 		for i, object in ipairs(self.objects) do
-			if not object.layout.ignore then
+			if object:canLayout() then
 				local ow, oh = object:autolayout(internal_w, primary_fills[i])
 
 				object_sizes[i] = {ow, oh}
@@ -394,7 +415,7 @@ function CompositeObject:layout_deploy()
 
 			local layout_objects = 0
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					content_length = content_length + object.w
 
 					layout_objects = layout_objects + 1
@@ -412,7 +433,7 @@ function CompositeObject:layout_deploy()
 
 		if vertical == "top" then
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					object:move(offset, layout.padding[2])
 
 					offset = offset + object.w + gap
@@ -422,7 +443,7 @@ function CompositeObject:layout_deploy()
 			local container_half = (self.h - layout.padding[2] - layout.padding[4])/2
 
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					object:move(offset, layout.padding[2] + math.floor(container_half - object.h/2 + .5))
 
 					offset = offset + object.w + gap
@@ -430,7 +451,7 @@ function CompositeObject:layout_deploy()
 			end
 		elseif vertical == "bottom" then
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					object:move(offset, self.h - layout.padding[4] - object.h)
 
 					offset = offset + object.w + gap
@@ -447,7 +468,7 @@ function CompositeObject:layout_deploy()
 
 			local layout_objects = 0
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					content_length = content_length + object.h
 
 					layout_objects = layout_objects + 1
@@ -465,7 +486,7 @@ function CompositeObject:layout_deploy()
 
 		if horizontal == "left" then
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					object:move(layout.padding[1], offset)
 
 					offset = offset + object.h + gap
@@ -475,7 +496,7 @@ function CompositeObject:layout_deploy()
 			local container_half = (self.w - layout.padding[1] - layout.padding[3])/2
 
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					object:move(layout.padding[1] + math.floor(container_half - object.w/2 + .5), offset)
 
 					offset = offset + object.h + gap
@@ -483,7 +504,7 @@ function CompositeObject:layout_deploy()
 			end
 		elseif vertical == "right" then
 			for _, object in ipairs(self.objects) do
-				if not object.layout.ignore then
+				if object:canLayout() then
 					object:move(self.w - layout.padding[3] - object.w, offset)
 
 					offset = offset + object.h + gap
@@ -492,6 +513,8 @@ function CompositeObject:layout_deploy()
 		end
 	end
 end
+
+--#endregion
 
 --#region Passthrough static functions
 

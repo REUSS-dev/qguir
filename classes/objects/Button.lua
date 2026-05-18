@@ -51,6 +51,12 @@ local Button = { defaultCursor = "hand" }
 local Button_meta = {__index = Button}
 setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
 
+function Button:resize(new_w, new_h)
+	uiobj.class.resize(self, new_w, new_h)
+
+	self:generateTextCache()
+end
+
 function Button:paint()
     -- Inside fill
     if self.held then
@@ -60,7 +66,7 @@ function Button:paint()
     else
         love.graphics.setColor(self.palette[1])
     end
-    
+
     love.graphics.rectangle("fill", 0, 0, self.w, self.h)
 
     -- Border
@@ -99,6 +105,10 @@ end
 ---Regenerate crucial data for button text printing
 ---@package
 function Button:generateTextCache()
+	if not self.w or not self.h then
+		return
+	end
+
     self.textCache = {}
 
     local fontHeight = self.font:getHeight()
@@ -134,8 +144,6 @@ function button.new(prototype)
     local obj = uiobj.new(prototype)
 
     setmetatable(obj, Button_meta) ---@cast obj Button
-
-    obj:generateTextCache()
 
     return obj
 end
