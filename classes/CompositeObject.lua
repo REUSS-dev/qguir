@@ -145,6 +145,8 @@ function CompositeObject:add(obj)
     self.objects[#self.objects+1] = obj
 
 	self:relayout()
+
+	return self
 end
 
 function CompositeObject:remove(to_remove)
@@ -155,7 +157,7 @@ function CompositeObject:remove(to_remove)
 
 			self:relayout()
 
-            return
+            return self
         end
     end
 end
@@ -167,6 +169,8 @@ function CompositeObject:setGrowth(new_growth)
 		self.layout.growth = new_growth
 		self:relayout()
 	end
+
+	return self
 end
 
 function CompositeObject:setPadding(left, top, right, bottom)
@@ -179,6 +183,8 @@ function CompositeObject:setPadding(left, top, right, bottom)
 		self.layout.padding[3] = right or self.layout.padding[3]
 		self.layout.padding[4] = bottom or self.layout.padding[4]
 	end
+
+	return self
 end
 
 function CompositeObject:relayout()
