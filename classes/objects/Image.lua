@@ -76,7 +76,7 @@ end
 function Image:autolayout(fill_w, fill_h)
 	local ow, oh = uiobj.class.autolayout(self, fill_w, fill_h)
 
-	if not ow or oh then
+	if not ow or not oh then
 		if self.layout.w == "hug" then
 			if self.layout.h == "hug" then
 				error("Image object cannot be [\"hug\", \"hug\"]")
