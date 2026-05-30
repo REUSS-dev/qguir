@@ -73,6 +73,56 @@ function Image:paint()
 	love.graphics.draw(self.image, self.drawCache.x, self.drawCache.y, 0, self.drawCache.wscale, self.drawCache.hscale)
 end
 
+function Image:autolayout(fill_w, fill_h)
+	local ow, oh = uiobj.class.autolayout(self, fill_w, fill_h)
+
+	if not ow or oh then
+		if self.layout.w == "hug" then
+			if self.layout.h == "hug" then
+				error("Image object cannot be [\"hug\", \"hug\"]")
+			end
+
+			if self.display == "stretch" then
+				error("Image object display mode cannot be \"stretch\", when one of dimensions is \"hug\"")
+			end
+
+			if oh then
+				local img_h = self.image:getHeight()
+				local scale = oh / img_h
+
+				if self.display == "limit" then
+					scale = math.min(scale, 1)
+				end
+
+				ow = math.floor(self.image:getWidth() * scale + .5)
+			end
+		elseif self.layout.h == "hug" then
+			if self.display == "stretch" then
+				error("Image object display mode cannot be \"stretch\", when one of dimensions is \"hug\"")
+			end
+
+			if ow then
+				local img_w = self.image:getWidth()
+				local scale = ow / img_w
+
+				if self.display == "limit" then
+					scale = math.min(scale, 1)
+				end
+
+				oh = math.floor(self.image:getHeight() * scale + .5)
+			end
+		end
+
+		if ow and oh then
+			if ow ~= self.w or oh ~= self.h then
+				self:resize(ow, oh)
+			end
+		end
+	end
+
+	return ow, oh
+end
+
 function Image:resize(new_w, new_h)
 	uiobj.class.resize(self, new_w, new_h)
 
@@ -128,14 +178,6 @@ function image.new(prototype)
 
 	if not obj.image then
 		error("Image must be provided for an Image object")
-	end
-
-	if obj.layout.w == "hug" then
-		obj.layout.w = obj.image:getWidth()
-	end
-
-	if obj.layout.h == "hug" then
-		obj.layout.h = obj.image:getHeight()
 	end
 
     return obj
