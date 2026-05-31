@@ -81,6 +81,14 @@ function Label:autolayout(fill_w, fill_h)
 	return ow, oh
 end
 
+function Label:setText(new_text)
+	self.text = new_text
+
+	if self.parent then
+		self.parent:relayout()
+	end
+end
+
 function Label:resize(new_w, new_h)
 	uiobj.class.resize(self, new_w, new_h)
 
