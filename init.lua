@@ -291,8 +291,6 @@ local function parseDefinition(definition, rules)
     return objectPrototype
 end
 
----@debug parsing test print(parseDefinition({numb = false, aquarium = {12, 123}}, {{"position", {10, 20}}, {{"isWhale"}, "fish", "false"}, {{"numb"}, "n", 123}, {{"fishtank", "aquarium"}, "aqua", {}, {"position"}}}).aqua.x)
-
 ---Register UI object type descriptor
 ---@param typeDescriptor ObjectDescriptor
 local function registerType(typeDescriptor)

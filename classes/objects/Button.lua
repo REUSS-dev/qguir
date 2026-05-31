@@ -1,9 +1,9 @@
 -- button
 local button = {}
 
+local label = require("classes.objects.Label")
+local composite = require("classes.CompositeObject")
 local uiobj = require("classes.ObjectUI")
-
-local utf = require("utf8")
 
 -- documentation
 
@@ -14,13 +14,14 @@ local utf = require("utf8")
 button.name = "Button"
 button.aliases = {}
 button.rules = {
-    {"layout", {w = 100, h = 50}},
+    {"layout", {w = 100, h = 50, padding = 10}},
 
     {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}, additionalColor = {0, 0.5, 0, 0.4}}},
 
     {{"action", "push", "press"}, "action", function() end},
     {{"text", "label"}, "text", "Button"},
-    {{"font"}, "font", love.graphics.getFont()}
+    {{"font"}, "font", love.graphics.getFont()},
+	{{"bsize", "border_size", "borderSize"}, "bsize", 3},
 }
 
 -- consts
@@ -41,42 +42,26 @@ button.rules = {
 
 -- classes
 
----@class Button : ObjectUI
+---@class Button : CompositeObject
 ---@field held boolean Flag if button is currently held (Left mouse button) by user
 ---@field action fun() Button action callback. Triggers ONLY when user presses and releases LMB on button object
----@field textCache table Set of data for printing button text. WARNING: This should be nullified on button size/text change.
 ---@field text string Button text
 ---@field font love.Font Button text font
+---@field originalColor ColorTable
 local Button = { defaultCursor = "hand" }
 local Button_meta = {__index = Button}
-setmetatable(Button, {__index = uiobj.class}) -- Set parenthesis
+setmetatable(Button, {__index = composite.class}) -- Set parenthesis
 
-function Button:resize(new_w, new_h)
-	uiobj.class.resize(self, new_w, new_h)
+Button.checkHover = uiobj.class.checkHover
 
-	self:generateTextCache()
-end
-
-function Button:paint()
-    -- Inside fill
-    if self.held then
-        love.graphics.setColor(self.palette[1].darker)
+function Button:tick(dt)
+	if self.held then
+		self.palette.container[1] = self.originalColor.darker
     elseif self.hl then
-        love.graphics.setColor(self.palette[1].brighter)
+        self.palette.container[1] = self.originalColor.brighter
     else
-        love.graphics.setColor(self.palette[1])
+        self.palette.container[1] = self.originalColor
     end
-
-    love.graphics.rectangle("fill", 0, 0, self.w, self.h)
-
-    -- Border
-    love.graphics.setColor(self.palette[3])
-    love.graphics.rectangle("line", 0, 0, self.w, self.h)
-
-    -- Text
-    love.graphics.setColor(self.palette[2])
-    love.graphics.setFont(self.font)
-    love.graphics.printf(self.textCache.textVisual, 0, self.textCache.y, self.w, "center")
 end
 
 function Button:click(_, _, but)
@@ -102,48 +87,30 @@ function Button:keyPress(key)
     end
 end
 
----Regenerate crucial data for button text printing
----@package
-function Button:generateTextCache()
-	if not self.w or not self.h then
-		return
-	end
-
-    self.textCache = {}
-
-    local fontHeight = self.font:getHeight()
-    local allowedLines = math.floor(self.h/fontHeight)
-
-    local _, wrapped_lines = self.font:getWrap(self.text, self.w)
-
-    self.textCache.y = math.floor((self.h - fontHeight * math.min(#wrapped_lines, allowedLines)) / 2)
-
-    if allowedLines == 0 then
-        self.textCache.textVisual = "?"
-    elseif #wrapped_lines <= allowedLines then
-        self.textCache.textVisual = self.text
-    else -- text has more lines than allowed
-        local tocut = self.text
-
-        -- cut text progressively from end until it is possible to fit it 
-        repeat
-            tocut = utf.sub(tocut, 1, -2)
-
-            local _, cutlines = self.font:getWrap(tocut .. "..", self.w)
-        until #cutlines <= allowedLines
-    
-        self.textCache.textVisual = tocut .. ".."
-    end
-end
-
 button.class = Button
 
 -- button fnc
 
 function button.new(prototype)
-    local obj = uiobj.new(prototype)
+    local obj = composite.new(prototype)
 
     setmetatable(obj, Button_meta) ---@cast obj Button
+
+	obj.originalColor = obj.palette:getColorByIndex(1)
+
+	local button_text = label.new{
+		text = obj.text,
+		font = obj.font,
+
+		layout = {
+			w = "hug",
+			h = "hug",
+			horizontal = "center",
+		},
+		palette = obj.palette,
+
+	}
+	obj:add(button_text)
 
     return obj
 end
