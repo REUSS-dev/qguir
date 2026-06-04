@@ -75,7 +75,7 @@ function Button:clickRelease(x, y, but)
         self.held = false
 
         if self.hl then
-            self.action()
+            self:action()
         end
     end
 end
@@ -83,7 +83,7 @@ end
 function Button:keyPress(key)
     -- Also trigger button action when button has focus and Return hit
     if key == "return" then
-        self.action()
+        self:action()
     end
 end
 
