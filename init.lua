@@ -280,7 +280,9 @@ local function parseDefinition(definition, rules)
                 end
 
                 if not appliedRules then -- 4.1. Generalized passthrough
-                    objectPrototype[outputName] = value
+                    if value ~= nil then
+						objectPrototype[outputName] = value
+					end
                 else -- 4.2 Generalized recursive parsing
                     objectPrototype[outputName] = parseDefinition(value, appliedRules)
                 end
@@ -466,6 +468,10 @@ function stellar.loadExternalObjects(path)
         print(string.format("Loading object from %s", path .. "/" .. item))
         stellar.loadExternalObjects(path .. "/" .. item)
     end
+end
+
+function stellar.getObjectDescriptor(descriptor_name)
+	return object_descriptors[descriptor_name]
 end
 
 --#region Debug functions
