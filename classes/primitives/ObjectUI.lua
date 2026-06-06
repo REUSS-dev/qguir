@@ -1,37 +1,12 @@
 -- uiobj
-local uiobj = {}
-
-
-
--- documentation
-
-
-
--- config
-
-uiobj.name = "ObjectUI"
-uiobj.aliases = {"uiobj"}
-uiobj.rules = {}
-
--- consts
-
-
-
--- vars
-
-
-
--- init
-
-
-
--- fnc
 
 
 
 -- classes
 
 ---@class ObjectUI
+---@field protected extends string|false|nil Name of a parent Object class
+---@field public cursors table<string, love.Cursor>?
 ---@field protected x pixels X coordinate of the UI object in pixels.
 ---@field protected y pixels Y coordinate of the UI object in pixels.
 ---@field protected w pixels Width of the UI object in pixels.
@@ -45,8 +20,21 @@ uiobj.rules = {}
 ---@field protected parent CompositeObject UI object parent
 ---@field protected defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
 ---@field protected layout LayoutProperties
-local ObjectUI = {}
-local ObjectUI_meta = {__index = ObjectUI}
+local ObjectUI = {
+	name = "ObjectUI",
+	extends = false,
+	aliases = {"uiobj"},
+	rules = {"layout"},
+	default = {
+		w = 100,
+		h = 100,
+		padding = 0,
+		growth = "vertical",
+		horizontal = "center",
+		vertical = "center",
+		gap = 10,
+	}
+}
 
 --- Flags
 
@@ -286,22 +274,6 @@ function ObjectUI:hoverOff(x, y)
     self.hl = false
 end
 
---Triggers when object gets unregistered from StellarGUI. Partially serves as a kind of destructor.
----@param message string? Unregister request message. Serves as a kind of "signal" [like in e.g. POSIX *kill* command] passed to UI object when lib tries to unregister it. 
----@return boolean? unregisterOk If the object ready to be unregistered. Return **true**, if object should not be unregistered right now, **false/nil** otherwise
----@diagnostic disable-next-line: unused-local
-function ObjectUI:unregister(message)
-    if self.focus then
-        self:revokeFocus()
-    end
-
-    if self.hl then
-        self:hoverOff(-1, -1)
-    end
-
-    ---@todo Possibly add mouse click releases?
-end
-
 --- Virtuals
 
 ---Paint the UI object on screen.<br>**This function is virtual and must be defined in a child class**
@@ -311,7 +283,7 @@ function ObjectUI:paint()
 end
 
 ---Tick the UI object.<br>**This function is virtual and must be defined in a child class**
----@param dt seconds Love update delta-time
+---@param dt number Love update delta-time
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:tick(dt)
 end
@@ -399,44 +371,17 @@ function ObjectUI:getParent()
 	return self.parent
 end
 
---#region Passthrough static functions
+--#region Service methods
 
----Volunteerly revoke focus from self and optionally give it to another object.
----@param successor ObjectUI?
-function ObjectUI:revokeFocus(successor)
-    self.parent:revokeFocus(self, successor)
-end
+function ObjectUI:new()
+    self.hl = false
+    self.focus = false
 
----Change current system cursor type
----@param type love.CursorType?
-function ObjectUI:setCursor(type)
-    self.parent:setCursor(self, type)
+    self.draw = true
+    self.update = true
+    self.interactible = true
 end
 
 --#endregion
 
-uiobj.class = ObjectUI
-
--- uiobj fnc
-
----Create new ObjectUI object and assign class metatable to it.
----@param prototype ObjectPrototype
----@return ObjectUI object New UI object
-function uiobj.new(prototype)
-    local obj = prototype
-
-    obj.hl = false
-    obj.focus = false
-
-    obj.draw = true
-    obj.update = true
-    obj.interactible = true
-
-    setmetatable(obj, ObjectUI_meta)
-
-    return obj
-end
-
-uiobj.class = ObjectUI -- Allow child classes.
-
-return uiobj
+return ObjectUI

@@ -4,26 +4,17 @@ local stellar = {}
 local selfpath = (...):match("^(.*%.?[^.]+)$"):gsub("%.", "/")
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. ";" .. love.filesystem.getRequirePath():gsub("(%?%.lua)", selfpath .. "/%1"))
 
+package.loaded["stellargui"] = stellar
+
 local utf = require("utf8")
 
-local composite = require("classes.CompositeObject")
-local paletteClass = require("classes.Palette")
+local parse = require("scripts.parse")
 
 -- documentation
 
 ---@meta
 
 ---@alias pixels number Amount of pixels.
----@alias seconds number Amount of seconds
----@alias DimensionsXYWH {[1]: pixels, [2]: pixels, [3]: pixels, [4]: pixels} Structure for some object's X position, Y position, width and height.
-
----@alias ObjectDescriptor {name: string, aliases: string[]?, new: (fun(prototype: ObjectPrototype):ObjectUI), rules: ObjectParsingRule[], cursors: table<string, love.Cursor>?, construct: fun(ObjectDefinition): ObjectUI}
-
----@alias ObjectDefinition table Table, which contains UI object definition fields, and is to be processed by UI object definition Parser
----@alias ObjectParser fun(definition: ObjectDefinition, sink: ObjectPrototype):boolean A function, that processes UI object definition and outputs prepared parameters into sink. If it fails to process given definition, it will return false.
----@alias ObjectParserName string
----@alias ObjectParsingRule ObjectParserName|function|{[1]: ObjectParserName, [2]: ObjectDefinition}|{[1]: string[], [2]: string, [3]: ObjectDefinition, [4]: ObjectParserName[]?}
----@alias ObjectPrototype table Table, which contains valid object keys and parameters. Usually returned from parseDefinition
 
 ---@alias ResolutiionValue "hug"|"fill"|number
 ---@alias GrowthVariants "vertical"|"horizontal"
@@ -41,22 +32,13 @@ local externalTypesDir = selfpath .. "/classes/objects"
 local DEFAULT_CURSOR = "arrow"
 local DEFAULT_DOUBLE_CLICK_TIME = 0.5
 
-local DEFAULT_GROWTH = "vertical"
-local DEFAULT_ALIGNMENT_HORIZONTAL = "center"
-local DEFAULT_ALIGNMENT_VERTICAL = "center"
-local DEFAULT_GAP = 10
-
-local CANVAS_DEFAULT_GAP = DEFAULT_GAP
-local CANVAS_DEFAULT_PADDING = {15, 15, 15, 15}
-
 -- vars
 
 local currentCursor = DEFAULT_CURSOR ---@type love.CursorType
 local doubleClickTime = DEFAULT_DOUBLE_CLICK_TIME
 
 
-local object_descriptors = {}       ---@type table<string, ObjectDescriptor>
-local definition_parsers = {}       ---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
+local object_descriptors = {}       ---@type table<string, ObjectUI>
 local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cursor}
 
 local current_canvas				---@type CanvasObject
@@ -79,7 +61,7 @@ local nopFunc = function() end
 setmetatable(stellar, {
     __index = function (_, key)
         if object_descriptors[key] then
-            return object_descriptors[key].construct
+            return object_descriptors[key]
         end
     end
 })
@@ -111,7 +93,7 @@ local function utf_sub(str, b, e)
 end
 
 ---Standard update function for the functionality of StellarGUI
----@param dt seconds
+---@param dt number
 local function stellar_update(dt)
     local x, y = love.mouse.getX(), love.mouse.getY()
 
@@ -148,165 +130,20 @@ local function stellar_draw()
     love.graphics.pop()
 end
 
---#region Parsers collection
-
----Parser for object width and height.<br>Will parse size (ex. width = 200, height = 100) correctly if it is defined in the definition table as any of following:<br>{0, 0, 200, 100}<br>{"objectName", 0, 0, 200, 100}<br>{w = 200, h = 100}<br>{width = 200, height = 100}<br>{ size = {200, 100} }
----@type ObjectParser
-function definition_parsers.layout(def, sink)
-	layout = sink.layout or {}
-
-    local width = layout.w or def.w or def.width or (def.size or {})[1]
-    local height = layout.h or def.h or def.height or (def.size or {})[2]
-    layout.w = width
-    layout.h = height
-
-	local padding = def.padding
-
-	if padding then
-		if type(padding) == "number" then
-			padding = {padding, padding, padding, padding}
-		elseif type(padding) == "table" then
-			if #padding == 1 then
-				padding = {padding[1], padding[1], padding[1], padding[1]}
-			elseif #padding == 2 then
-				padding = {padding[2], padding[1], padding[2], padding[1]}
-			elseif #padding == 3 then
-				padding = {padding[2], padding[1], padding[2], padding[3]}
-			elseif #padding >= 4 then
-				padding = {padding[1], padding[2], padding[3], padding[4]}
-			else
-				padding = nil
-			end
-		end
-	end
-
-	layout.padding = layout.padding or padding
-
-	layout.growth = layout.growth or def.growth
-	layout.horizontal = layout.horizontal or def.horizontal
-	layout.vertical = layout.vertical or def.vertical
-	layout.gap = layout.gap or def.gap
-
-	layout.ignore = layout.ignore or def.ignoreLayout or def.ignore_layout or def.static
-
-	if sink.layout then
-		layout.padding = layout.padding or {0, 0, 0, 0}
-
-		layout.growth = layout.growth or DEFAULT_GROWTH
-		layout.horizontal = layout.horizontal or DEFAULT_ALIGNMENT_HORIZONTAL
-		layout.vertical = layout.vertical or DEFAULT_ALIGNMENT_VERTICAL
-		layout.gap = layout.gap or DEFAULT_GAP
-
-		return true
-	end
-
-	sink.layout = layout
-
-    return false
-end
-
-function definition_parsers.palette(def, sink)
-    local palette = def.palette or def.palete or def.colors
-
-    if palette then
-        if type(palette) == "table" and palette.container then
-            sink.palette = palette
-            return true
-        end
-
-        sink.palette = paletteClass.new(palette)
-        return true
-    end
-
-    local color = def.color or def.mainColor or def.colorMain or def.main_color
-    local text = def.textColor or def.colorText or def.text_color
-    local alt = def.frameColor or def.colorFrame or def.additionalColor or def.colorAdditional or def.bgColor or def.hlColor
-
-    if sink.palette then
-        if not sink.palette:getColorByIndex(1) then
-            sink.palette:setColor(1, color)
-        end
-        if not sink.palette:getColorByIndex(2) then
-            sink.palette:setColor(2, text)
-        end
-        if not sink.palette:getColorByIndex(3) then
-            sink.palette:setColor(3, alt)
-        end
-
-        return true
-    end
-
-    sink.palette = paletteClass.new({color, text, alt})
-
-    if not color or not text or not alt then
-        return false
-    end
-
-    return true
-end
-
---#endregion
-
----Parse provided definition into object prototype
----@param definition ObjectDefinition
----@param rules ObjectParsingRule[]
----@return ObjectPrototype
-local function parseDefinition(definition, rules)
-    local objectPrototype = {}
-    
-    for _, parser in ipairs(rules) do
-        if type(parser) == "string" then -- 1. Stupid parsing (not aware of failure)
-            definition_parsers[parser](definition, objectPrototype)
-        elseif type(parser) == "function" then -- 2. Custom object type-provided parser
-            parser(definition, objectPrototype)
-        elseif type(parser) == "table" then
-            if type(parser[1]) == "string" then -- 3. Parsing with default value set
-                if not definition_parsers[parser[1]](definition, objectPrototype) then
-                    definition_parsers[parser[1]](parser[2], objectPrototype)
-                end
-            elseif type(parser[1]) == "table" then -- 4. Simple parsing
-                local possibleInputNames, outputName, defaultValue, appliedRules = parser[1], parser[2], parser[3], parser[4]
-                local value
-
-                for _, name in ipairs(possibleInputNames) do
-                    if type(definition[name]) ~= "nil" then
-                        value = definition[name]
-                        break
-                    end
-                end
-
-                if type(value) == "nil" then
-                    value = defaultValue
-                end
-
-                if not appliedRules then -- 4.1. Generalized passthrough
-                    if value ~= nil then
-						objectPrototype[outputName] = value
-					end
-                else -- 4.2 Generalized recursive parsing
-                    objectPrototype[outputName] = parseDefinition(value, appliedRules)
-                end
-            end
-        end
-    end
-
-    return objectPrototype
-end
-
 ---Register UI object type descriptor
----@param typeDescriptor ObjectDescriptor
+---@param typeDescriptor ObjectUI
 local function registerType(typeDescriptor)
-    function typeDescriptor.construct(def)
-        local prototype = parseDefinition(def, typeDescriptor.rules)
-        return typeDescriptor.new(prototype)
-    end
+    if object_descriptors[typeDescriptor.name] then
+		print("Object " .. typeDescriptor.name .. " is already registered within system, skipping.")
+		return
+	end
 
-    object_descriptors[typeDescriptor.name] = typeDescriptor
+	object_descriptors[typeDescriptor.name] = typeDescriptor
 
     if typeDescriptor.aliases then
         for _, alias in ipairs(typeDescriptor.aliases) do
             object_descriptors[alias] = typeDescriptor
-        end        
+        end
     end
 
     if typeDescriptor.cursors then
@@ -316,88 +153,39 @@ local function registerType(typeDescriptor)
     end
 end
 
--- classes
+local function stellar_construct(self, definition)
+	definition = definition or {}
 
---#region Canvas class
+	definition.defaults = definition.defaults or {[0] = definition}
+	if self.default then
+		definition.defaults[#definition.defaults+1] = self.default
+	end
 
----UI objects meta-parent, UI state can be manipulated through this object. Meant to be singleton
----@class CanvasObject : CompositeObject
-local CanvasObject = { parent = true }
-setmetatable(CanvasObject, {__index = composite.class})
+	local new_object
 
---Volunteerly revoke focus from self and optionally give it to another object.
----@param origin ObjectUI
----@param successor ObjectUI?
-function CanvasObject:revokeFocus(origin, successor)
-    if focusedObject == origin then
-        focusedObject:loseFocus()
-        
-        if successor and successor:isInteractible() then
-            focusedObject = successor
-            successor:gainFocus()
-        end
-    end
+	if self.extends then
+		new_object = object_descriptors[self.extends](definition)
+	else
+		new_object = {}
+	end
+
+	definition.rules = self.rules
+
+	setmetatable(new_object, nil)
+	parse.resolve(definition, new_object)
+
+	setmetatable(new_object, self)
+	self.new(new_object)
+
+	return new_object
 end
-
----Change current system cursor type
----@param _ ObjectUI
----@param type love.CursorType?
-function CanvasObject:setCursor(_, type)
-    type = type or DEFAULT_CURSOR
-
-    if type ~= currentCursor then
-        currentCursor = type
-        love.mouse.setCursor(cursorStorage[type])
-    end
-end
-
-function CanvasObject:getTranslation()
-	return 0, 0
-end
-
-function CanvasObject:resize(new_w, new_h)
-	self.w = new_w
-	self.h = new_h
-end
-
-local function newCanvas(protoype)
-	protoype = protoype or {}
-
-	protoype.x = protoype.x or 0
-	protoype.y = protoype.y or 0
-
-	local width = protoype.w or love.graphics.getWidth()
-	local height = protoype.h or love.graphics.getHeight()
-	protoype.layout = {
-		w = width,
-		h = height,
-		padding = protoype.padding or CANVAS_DEFAULT_PADDING,
-
-		growth = protoype.growth or "vertical",
-		gap = protoype.gap or CANVAS_DEFAULT_GAP,
-		horizontal = protoype.horizontal or "center",
-		vertical = protoype.vertical or "center"
-	}
-
-	definition_parsers.palette(protoype, protoype)
-
-	local obj = composite.new(protoype)
-
-	setmetatable(obj, {__index = CanvasObject})
-
-	obj:autolayout()
-
-	return obj
-end
-
---#endregion
 
 -- stellar fnc
 
 --#region Canvas manipulation
 
 function stellar.createCanvas(prototype)
-	return newCanvas(prototype)
+	return stellar.Canvas(prototype)
 end
 
 function stellar.getCanvas()
@@ -430,14 +218,64 @@ end
 
 --#endregion
 
-function stellar.loadExternalObjects(path)
-    local path = path or externalTypesDir
+function stellar.activate_object(obj)
+	if obj.__index then
+		return
+	end
+
+	assert(obj.name, "Name is required for an unknown UI object that inherits " .. (obj.extends or "no one"))
+
+	obj.__index = obj
+
+	obj.aliases = obj.aliases or {}
+
+	obj.new = obj.new or function()end
+
+	if obj.extends == nil then
+		obj.extends = object_descriptors.ObjectUI.name
+	end
+
+	-- Generailze rules
+	obj.rules = obj.rules or {}
+
+	for _, rule in ipairs(obj.rules) do
+		if type(rule) == "table" then
+			if type(rule[1]) == "string" then
+				rule[1] = {rule[1]}
+			end
+
+			if not rule[2] then
+				rule[2] = rule[1]
+			end
+		end
+	end
+
+	if obj.extends then
+		local parent = object_descriptors[obj.extends]
+
+		assert(parent, "There is no such object class as \"" .. tostring(obj.extends) .. "\" to register as a parent of " .. obj.name)
+
+		parent.__call = stellar_construct
+
+		setmetatable(obj, parent)
+		obj[obj.extends] = parent
+	else
+		setmetatable(obj, {__call = stellar_construct})
+	end
+end
+
+---Loads object(s) from a specified path
+---@param path string
+---@param skip_init boolean? Skip ObjectUI:stellar_activate() call. This flag is used internally.
+---@return ObjectUI[]
+function stellar.loadExternalObjects(path, skip_init)
+    path = path or externalTypesDir
 
     local path_info = love.filesystem.getInfo(path)
 
     if not path_info then
         print(string.format("Failed loading object from %s. Path does not exist", path))
-        return
+        return {}
     end
 
     if path_info.type == "file" then
@@ -445,29 +283,46 @@ function stellar.loadExternalObjects(path)
 
         if not objectFileChunk then
             print(string.format("Failed loading object from %s. Compilation failed", path))
-            return
+            return {}
         end
 
         local descriptor = objectFileChunk()
 
         if type(descriptor) ~= "table" or not descriptor.name then
             print(string.format("Failed loading object from %s. Bad returning or table is not an object descriptor", path))
-            return
+            return {}
         end
 
         registerType(descriptor)
 
         print(string.format("Loaded object %s from %s, aliases: %s", descriptor.name, path, table.concat(descriptor.aliases or {}, ", ")))
 
-        return true
+        if not skip_init then
+			stellar.activate_object(descriptor)
+		end
+
+		return {descriptor}
     end
 
     local items = love.filesystem.getDirectoryItems(path)
+	local toactivate = {} ---@type ObjectUI[]
 
     for _, item in ipairs(items) do
         print(string.format("Loading object from %s", path .. "/" .. item))
-        stellar.loadExternalObjects(path .. "/" .. item)
+        local loaded_objects = stellar.loadExternalObjects(path .. "/" .. item, true)
+
+		for _, object in ipairs(loaded_objects) do
+			toactivate[#toactivate+1] = object
+		end
     end
+
+	if not skip_init then
+		for _, object in ipairs(toactivate) do
+			stellar.activate_object(object)
+		end
+	end
+
+	return toactivate
 end
 
 function stellar.getObjectDescriptor(descriptor_name)
@@ -478,8 +333,8 @@ end
 
 function stellar.drawMousePosition()
     love.graphics.setColor(
-        love.mouse.isDown(1) and {0.3, 0.3, 1, 1} or 
-        love.mouse.isDown(2) and {1, 0.3, 0.3, 1} or 
+        love.mouse.isDown(1) and {0.3, 0.3, 1, 1} or
+        love.mouse.isDown(2) and {1, 0.3, 0.3, 1} or
         love.mouse.isDown(3) and {0.3, 1, 0.3, 1} or
         love.mouse.isDown(4, 5, 6) and {1, 1, 0, 1} or
         {1, 1, 1, 1}
@@ -646,11 +501,13 @@ function stellar.hook(force)
 		love_resize(w, h)
 	end
 
-    hooked = true
+	stellar.loadExternalObjects("classes/primitives")
 
 	local new_canvas = stellar.createCanvas()
 	stellar.storeCanvas(1, new_canvas)
 	stellar.setCanvas(1)
+
+	hooked = true
 
     return stellar
 end

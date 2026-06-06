@@ -1,7 +1,4 @@
--- palette
-local palette = {}
-
-
+-- StellarGUI 2 - classes/Palette.lua
 
 -- documentation
 
@@ -72,16 +69,15 @@ end
 ---@class Palette
 ---@field container {[ColorIndex]: ColorTable}
 local Palette = {}
-local Palette_meta = {}
 
-function Palette_meta:__index(key)
+function Palette:__index(key)
     local colorindex = colorNames[key]
 
     if colorindex then
         return self.container[colorindex]
-    else
-        return Palette[key]
     end
+
+	return Palette[key]
 end
 
 ---Get color table by color index
@@ -119,17 +115,15 @@ function Palette:setColorAlpha(index_or_name, new_alpha)
     end
 end
 
--- palette fnc
-
 ---Create new palette from an array of color tables
 ---@param colors ColorTable|table<number|ColorNames, ColorTable>?
 ---@return Palette PaletteObject
-function palette.new(colors)
+function Palette.new(colors)
     local obj = {
         container = {}
     }
 
-    setmetatable(obj, Palette_meta) ---@cast obj Palette
+    setmetatable(obj, Palette) ---@cast obj Palette
 
     if not colors then
         return obj
@@ -153,4 +147,6 @@ function palette.new(colors)
     return obj
 end
 
-return palette
+setmetatable(Palette, {__call = Palette.new})
+
+return Palette

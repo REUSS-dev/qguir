@@ -1,56 +1,38 @@
 -- composite
-local composite = {}
 
-local uiobj = require("classes.ObjectUI")
-
--- documentation
-
-
-
--- config
-
-composite.name = "CompositeObject"
-composite.aliases = {"Composite", "Container"}
-composite.rules = {
-	{"layout", {w = "hug", h = "hug"}},
-	"palette",
-	{{"r", "radius"}, "r", 0},
-	{{"bsize", "border_size", "borderSize"}, "bsize", 5}
-}
-
--- consts
-
-
-
--- vars
-
-
-
--- init
-
-
-
--- fnc
-
-
+local gui = require("stellargui")
 
 -- classes
 
 ---@class CompositeObject : ObjectUI
+---@field ObjectUI ObjectUI
 ---@field objects ObjectUI[] List of UI objects inside the composite object
 ---@field fill_flag boolean
 ---@field border_flag boolean
 ---@field bsize number
 ---@field r number
-local CompositeObject = {}
-local CompositeObject_meta = {__index = CompositeObject}
+local CompositeObject = {
+	name = "CompositeObject",
+	aliases = {"Composite", "Container"},
+	rules = {
+		"palette",
+		{{"r", "radius"}, "r"},
+		{{"bsize", "border_size", "borderSize"}, "bsize"}
+	},
+	default = {
+		w = "hug",
+		h = "hug",
+		r = 0,
+		bsize = 3
+	}
+}
 
 ---Check, if coordinates provided are in boundaries of any of UI objects in the composite object
 ---@param x pixels Mouse X position in pixels
 ---@param y pixels Mouse Y position in pixels
 ---@return ObjectUI|false hover Returns object pointer if the mouse if hovering on the object, false otherwise
 function CompositeObject:checkHover(x, y)
-    if not uiobj.class.checkHover(self, x, y) and not self:hasFocus() then
+    if not self.ObjectUI.checkHover(self, x, y) and not self:hasFocus() then
         return false
     end
 
@@ -65,16 +47,6 @@ function CompositeObject:checkHover(x, y)
     end
 
     return hlObject
-end
-
-function CompositeObject:unregister(message)
-    local halt
-
-    for _, uiobject in ipairs(self.objects) do
-        halt = halt or uiobject:unregister(message)
-    end
-
-    return halt
 end
 
 ---Hide all objects im a composite
@@ -92,7 +64,7 @@ function CompositeObject:show()
 end
 
 ---Tick all UI objects in a composite object.
----@param dt seconds
+---@param dt number
 function CompositeObject:tick(dt)
     for _, uiobject in ipairs(self.objects) do
         if uiobject:isActive() then
@@ -152,7 +124,6 @@ end
 function CompositeObject:remove(to_remove)
     for i, obj in ipairs(self.objects) do
         if obj == to_remove then
-            obj:unregister()
             table.remove(self.objects, i)
 
 			self:relayout()
@@ -160,6 +131,21 @@ function CompositeObject:remove(to_remove)
             return self
         end
     end
+end
+
+function CompositeObject:create(object_type)
+	return gui[object_type or self] -- allows to call both with a function call "." and method call ":"
+end
+
+function CompositeObject:createChild(object_type)
+	local function childinit(prototype)
+		local new_child = gui[object_type](prototype)
+		self:add(new_child)
+
+		return new_child
+	end
+
+	return childinit
 end
 
 --#region Layout
@@ -196,7 +182,7 @@ function CompositeObject:relayout()
 end
 
 function CompositeObject:autolayout(free_w, free_h)
-	local w, h = uiobj.class.autolayout(self, free_w, free_h)
+	local w, h = self.ObjectUI.autolayout(self, free_w, free_h)
 
 	local layout = self.layout
 
@@ -522,44 +508,12 @@ end
 
 --#endregion
 
---#region Passthrough static functions
-
----Volunteerly revoke focus from self and optionally give it to another object.
----@param origin ObjectUI
----@param successor ObjectUI?
-function CompositeObject:revokeFocus(origin, successor)
-    self.parent:revokeFocus(origin, successor)
-end
-
----Change current system cursor type
----@param origin ObjectUI
----@param type love.CursorType?
-function CompositeObject:setCursor(origin, type)
-    self.parent:setCursor(origin, type)
-end
-
---#endregion
-
-setmetatable(CompositeObject, {__index = uiobj.class}) -- Set parenthesis
-
-composite.class = CompositeObject
-
--- composite fnc
-
 ---Create new CompositeObject
----@param prototype ObjectPrototype
----@return CompositeObject
-function composite.new(prototype)
-    local obj = uiobj.new(prototype) ---@cast obj CompositeObject
+function CompositeObject:new()
+    self.objects = {}
 
-    obj.objects = {}
-
-    setmetatable(obj, CompositeObject_meta)
-	
-	obj.fill_flag = obj.palette.main and true or false
-	obj.border_flag = obj.palette.border and true or false
-
-    return obj
+	self.fill_flag = self.palette.main and true or false
+	self.border_flag = self.palette.border and true or false
 end
 
-return composite
+return CompositeObject
