@@ -1,7 +1,4 @@
 -- textfield
-local textfield = {}
-
-local uiobj = require("classes.ObjectUI")
 
 local utf = require("utf8")
 
@@ -14,24 +11,6 @@ local utf = require("utf8")
 ---@alias TextFieldScrollParameters {[1]: integer, [2]: integer} 1 - horizontal, 2 - vertical
 ---@alias TextFieldSelectionParameters {sel1: {[1]: integer, [2]: integer}, sel2: {[1]: integer, [2]: integer}, exists: boolean, active: boolean}
 
--- config
-
-textfield.name = "TextField"
-textfield.aliases = {}
-textfield.rules = {
-    {"layout", {w = 100, h = 50}},
-
-    {"palette", {colors = {{1, 1, 1, 1}, {0, 0, 0, 1}, {0.5, 0.5, 0.5, 1}, {0.2, 0.2, 0.6, 0.8}}}},
-
-    {{"action", "enter", "return"}, "action", function() end},
-    {{"text"}, "text", ""},
-    {{"placeholder", "default", "defaultText"}, "placeholder", ""},
-    {{"font"}, "font", love.graphics.getFont()},
-    {{"oneline", "forceOneline", "force_oneline"}, "oneline", nil},
-    {{"r", "radius", "rounding", "round"}, "r", nil},
-    {{"password"}, "password", false}
-}
-
 -- consts
 
 local TEXT_OFFSET_LEFT = 5
@@ -42,14 +21,6 @@ local TEXT_CARETTE_BLINK_PERIOD = 0.5
 local PROTECT_NEWLINE_SYMBOL = "\x0C"
 
 local PASSWORD_CHAR = "*"
-
--- vars
-
-
-
--- init
-
-
 
 -- fnc
 
@@ -86,6 +57,7 @@ end
 -- classes
 
 ---@class TextField : ObjectUI
+---@field ObjectUI ObjectUI
 ---@field text string[]
 ---@field font love.Font
 ---@field action fun(self: TextField)
@@ -105,8 +77,38 @@ end
 ---@field r number Radius of round corner
 ---@field password boolean Flag. If set to true, all displayed characters should be PASSWORD_CHAR
 ---@field placeholder string Placeholder text. Printed with Palette.additionalColor if no text is present
-local TextField = { defaultCursor = "ibeam" }
-local TextField_meta = {__index = TextField}
+local TextField = {
+	name = "TextField",
+	rules = {
+    "palette",
+
+    {{"action", "enter", "return"}, "action"},
+    {{"text"}, "text"},
+    {{"placeholder", "default", "defaultText"}, "placeholder"},
+    {{"font"}, "font"},
+    {{"oneline", "forceOneline", "force_oneline"}, "oneline"},
+    {{"r", "radius", "rounding", "round"}, "r"},
+    {{"password"}, "password"}
+	},
+	default = {
+		w = 100, h = 50,
+		colors = {
+			{1, 1, 1, 1},
+			{0, 0, 0, 1},
+			{0.5, 0.5, 0.5, 1},
+			{0.2, 0.2, 0.6, 0.8}
+		},
+
+		action = function()end,
+		text = "",
+		placeholder = "",
+		font = love.graphics.getFont(),
+		oneline = false,
+		password = false
+	},
+
+	defaultCursor = "ibeam"
+}
 
 --#region text wrap & lines processing
 
@@ -754,70 +756,55 @@ function TextField:paint()
 end
 
 function TextField:gainFocus()
-    uiobj.class.gainFocus(self)
+    self.ObjectUI.gainFocus(self)
 
     self.caretteVisibility = true
     self.caretteTimer = 0
 end
 
 function TextField:loseFocus()
-    uiobj.class.loseFocus(self)
+    self.ObjectUI.loseFocus(self)
 
     self.caretteVisibility = false
 end
 
-setmetatable(TextField, {__index = uiobj.class}) -- Set parenthesis
+function TextField:new()
+    self.textX = TEXT_OFFSET_LEFT
+    self.textY = TEXT_OFFSET_TOP
+    self.textareaW = self.w - self.textX * 2
+    self.textareaH = self.h - self.textX * 2
 
-textfield.class = TextField
+    self.lineHeight = self.font:getHeight()
 
--- textfield fnc
-
----Create new TextField object from object prototype
----@param prototype ObjectPrototype
----@return TextField
-function textfield.new(prototype)
-    local obj = uiobj.new(prototype)
-
-    setmetatable(obj, TextField_meta)---@cast obj TextField
-
-    obj.textX = TEXT_OFFSET_LEFT
-    obj.textY = TEXT_OFFSET_TOP
-    obj.textareaW = obj.w - obj.textX * 2
-    obj.textareaH = obj.h - obj.textX * 2
-
-    obj.lineHeight = obj.font:getHeight()
-
-    function obj.stencil()
-        love.graphics.rectangle("fill", obj.textX, obj.textY, obj.textareaW, obj.textareaH)
+    function self.stencil()
+        love.graphics.rectangle("fill", self.textX, self.textY, self.textareaW, self.textareaH)
     end
 
     -- oneline check
-    if type(obj.oneline) == "nil" then
-        if (obj.h - TEXT_OFFSET_TOP * 2)/obj.lineHeight <= 2 then ---@todo use protected parameters instead of getters (scope issue)
-            obj.oneline = true
+    if type(self.oneline) == "nil" then
+        if (self.h - TEXT_OFFSET_TOP * 2)/self.lineHeight <= 2 then ---@todo use protected parameters instead of getters (scope issue)
+            self.oneline = true
         end
     end
 
-    if obj.oneline then
-        obj.textY = math.floor(obj:getHeight()/2 - obj.lineHeight/2)
+    if self.oneline then
+        self.textY = math.floor(self:getHeight()/2 - self.lineHeight/2)
     end
 
-    if obj.password then
-        obj.getLineDisplay = TextField.getLineDisplay_password
+    if self.password then
+        self.getLineDisplay = TextField.getLineDisplay_password
     end
 
-    obj.carettePosition = {}
-    obj.display = {}
-    obj.scroll = {0, 0}
-    obj.selection = {sel1 = {0, 0}, sel2 = {0, 0}, active = false}
+    self.carettePosition = {}
+    self.display = {}
+    self.scroll = {0, 0}
+    self.selection = {sel1 = {0, 0}, sel2 = {0, 0}, active = false}
 
-    obj:updateDisplay()
-    obj:setText(obj.text)
-    obj:setCarette(0, math.huge)
+    self:updateDisplay()
+    self:setText(self.text)
+    self:setCarette(0, math.huge)
 
-    obj:updateCaretteVisual()
-
-    return obj
+    self:updateCaretteVisual()
 end
 
-return textfield
+return TextField

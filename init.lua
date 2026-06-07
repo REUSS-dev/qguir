@@ -140,6 +140,11 @@ local function registerType(typeDescriptor)
 
 	object_descriptors[typeDescriptor.name] = typeDescriptor
 
+	typeDescriptor.aliases = typeDescriptor.aliases or typeDescriptor.alias or {}
+	if type(typeDescriptor.aliases) == "string" then
+		typeDescriptor.aliases = {typeDescriptor.aliases}
+	end
+
     if typeDescriptor.aliases then
         for _, alias in ipairs(typeDescriptor.aliases) do
             object_descriptors[alias] = typeDescriptor
@@ -226,8 +231,6 @@ function stellar.activate_object(obj)
 	assert(obj.name, "Name is required for an unknown UI object that inherits " .. (obj.extends or "no one"))
 
 	obj.__index = obj
-
-	obj.aliases = obj.aliases or {}
 
 	obj.new = obj.new or function()end
 

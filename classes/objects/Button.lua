@@ -1,46 +1,4 @@
--- button
-local button = {}
-
-local label = require("classes.objects.Label")
-local composite = require("classes.CompositeObject")
-local uiobj = require("classes.ObjectUI")
-
--- documentation
-
-
-
--- config
-
-button.name = "Button"
-button.aliases = {}
-button.rules = {
-    {"layout", {w = 100, h = 50, padding = 10}},
-
-    {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}, additionalColor = {0, 0.5, 0, 0.4}}},
-
-    {{"action", "push", "press"}, "action", function() end},
-    {{"text", "label"}, "text", "Button"},
-    {{"font"}, "font", love.graphics.getFont()},
-	{{"bsize", "border_size", "borderSize"}, "bsize", 3},
-}
-
--- consts
-
-
-
--- vars
-
-
-
--- init
-
-
-
--- fnc
-
-
-
--- classes
+-- Button
 
 ---@class Button : CompositeObject
 ---@field held boolean Flag if button is currently held (Left mouse button) by user
@@ -48,13 +6,32 @@ button.rules = {
 ---@field text string Button text
 ---@field font love.Font Button text font
 ---@field originalColor ColorTable
-local Button = { defaultCursor = "hand" }
-local Button_meta = {__index = Button}
-setmetatable(Button, {__index = composite.class}) -- Set parenthesis
+local Button = {
+	name = "Button",
+		rules = {
+		{{"action", "push", "press"}, "action"},
+		{{"text", "label"}, "text"},
+		{{"font"}, "font"},
+	},
+	extends = "CompositeObject",
 
-Button.checkHover = uiobj.class.checkHover
+	default = {
+		w = 100, h = 50, padding = 10,
+		colors = {
+			main = {0, 0.5, 0, 0.4},
+			text = {1, 1, 1},
+			border = {0, 0.5, 0, 0.4}
+		},
 
-function Button:tick(dt)
+		action = function()end,
+		text = "Button",
+		font = love.graphics.getFont()
+	},
+
+	defaultCursor = "hand"
+}
+
+function Button:tick(_)
 	if self.held then
 		self.palette.container[1] = self.originalColor.darker
     elseif self.hl then
@@ -70,7 +47,7 @@ function Button:click(_, _, but)
     end
 end
 
-function Button:clickRelease(x, y, but)
+function Button:clickRelease(_, _, but)
     if but == 1 then
         self.held = false
 
@@ -87,32 +64,19 @@ function Button:keyPress(key)
     end
 end
 
-button.class = Button
-
 -- button fnc
 
-function button.new(prototype)
-    local obj = composite.new(prototype)
+function Button:new()
+	self.checkHover = self.ObjectUI.checkHover
+	self.originalColor = self.palette:getColorByIndex(1)
 
-    setmetatable(obj, Button_meta) ---@cast obj Button
+	self:createChild "Label" {
+		text = self.text,
+		font = self.font,
 
-	obj.originalColor = obj.palette:getColorByIndex(1)
-
-	local button_text = label.new{
-		text = obj.text,
-		font = obj.font,
-
-		layout = {
-			w = "hug",
-			h = "hug",
-			horizontal = "center",
-		},
-		palette = obj.palette,
-
+		horizontal = "center",
+		palette = self.palette
 	}
-	obj:add(button_text)
-
-    return obj
 end
 
-return button
+return Button

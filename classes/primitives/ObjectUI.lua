@@ -6,6 +6,7 @@
 
 ---@class ObjectUI
 ---@field protected extends string|false|nil Name of a parent Object class
+---@field public alias string?
 ---@field public cursors table<string, love.Cursor>?
 ---@field protected x pixels X coordinate of the UI object in pixels.
 ---@field protected y pixels Y coordinate of the UI object in pixels.

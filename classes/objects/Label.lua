@@ -1,52 +1,28 @@
 -- label
-local label = {}
-
-local uiobj = require("classes.ObjectUI")
 
 local utf = require("utf8")
 
--- documentation
-
-
-
--- config
-
-label.name = "Label"
-label.aliases = {}
-label.rules = {
-    {{"text", "label"}, "text", "Label"},
-    {{"font"}, "font", love.graphics.getFont()},
-
-    {"layout", {w = "hug", h = "hug", horizontal = "left"}},
-
-    {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {1, 1, 1}}},
-}
-
--- consts
-
-
-
--- vars
-
-
-
--- init
-
-
-
--- fnc
-
-
-
--- classes
-
 ---@class Label : ObjectUI
+---@field ObjectUI ObjectUI
 ---@field textCache table Set of data for printing button text. WARNING: This should be nullified on label size/text change.
 ---@field text string Button text
 ---@field font love.Font Button text font
-local Label = {}
-local Label_meta = {__index = Label}
-setmetatable(Label, {__index = uiobj.class}) -- Set parenthesis
+local Label = {
+	name = "Label",
+	rules = {
+		"palette",
+		{{"text", "label"}, "text"},
+    	{{"font"}, "font"},
+	},
+	default = {
+		w = "hug", h = "hug",
+		text = "Label",
+		font = love.graphics.getFont(),
+
+		horizontal = "left",
+		textColor = {1, 1, 1, 1}
+	}
+}
 
 function Label:paint()
     -- Text
@@ -56,7 +32,7 @@ function Label:paint()
 end
 
 function Label:autolayout(fill_w, fill_h)
-	local ow, oh = uiobj.class.autolayout(self, fill_w, fill_h)
+	local ow, oh = self.ObjectUI.autolayout(self, fill_w, fill_h)
 
 	if not ow or not oh then
 		local max_width, wrapped_lines = self.font:getWrap(self.text, ow or math.huge)
@@ -90,7 +66,7 @@ function Label:setText(new_text)
 end
 
 function Label:resize(new_w, new_h)
-	uiobj.class.resize(self, new_w, new_h)
+	self.ObjectUI.resize(self, new_w, new_h)
 
 	self:generateTextCache()
 end
@@ -120,21 +96,9 @@ function Label:generateTextCache()
 
             local _, cutlines = self.font:getWrap(tocut .. "..", self.w)
         until #cutlines <= allowedLines
-    
+
         self.textCache.textVisual = tocut .. ".."
     end
 end
 
-label.class = Label
-
--- button fnc
-
-function label.new(prototype)
-    local obj = uiobj.new(prototype)
-
-    setmetatable(obj, Label_meta) ---@cast obj Label
-
-    return obj
-end
-
-return label
+return Label

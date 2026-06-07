@@ -1,51 +1,36 @@
 -- slide
-local slide = {}
-
-local uiobj = require("classes.ObjectUI")
-
--- documentation
-
-
 
 -- config
 
 local default_width, default_height = 20, 20
 
-slide.name = "Slider"
-slide.aliases = {"Selector"}
-slide.rules = {
-    {"layout", {w = 200, h = 10}},
-
-    {"palette", {color = {0, 0.5, 0, 0.4}, textColor = {0, 0.4, 0.2, 1}, additionalColor = {1, 1, 1, 0.4}}},
-    {{"slider", "selector"}, "selector", {width = default_width, height = default_height}, {"sizeRectangular"}},
-    {{"default", "default_position", "default_value"}, "default", 0}
-}
-
--- consts
-
-
-
--- vars
-
-
-
--- init
-
-
-
--- fnc
-
-
-
 -- classes
 
 ---@class Slider : ObjectUI
+---@field ObjectUI ObjectUI
 ---@field selector {x: number, w: number, h: number, clickedX: integer?, previousX: integer?}
----@field default number Default value of a slider
+---@field default_value number Default value of a slider
 ---@field held boolean If slider currently held
-local Slider = {}
-local Slider_meta = { __index = Slider }
-setmetatable(Slider, {__index = uiobj.class}) -- Set parenthesis
+local Slider = {
+	name = "Slider",
+	aliases = "Selector",
+	rules = {
+		"palette",
+		{{"slider", "selector"}, "selector"},
+		{{"default", "default_position", "default_value"}, "default_value"}
+	},
+	default = {
+		w = 200, h = 10,
+		colors = {
+			main = {0, 0.5, 0, 0.4},
+			text = {0, 0.4, 0.2, 1},
+			border = {1, 1, 1, 0.4}
+		},
+
+		slider = {w = default_width, h = default_height},
+		default = 0
+	}
+}
 
 function Slider:paint()
     -- Inside fill
@@ -70,7 +55,7 @@ function Slider:checkHoverSelector(x, y)
 end
 
 function Slider:checkHover(x, y)
-    return uiobj.class.checkHover(self, x, y) or self:checkHoverSelector(x, y)
+    return self.ObjectUI.checkHover(self, x, y) or self:checkHoverSelector(x, y)
 end
 
 function Slider:click(x, y, but)
@@ -88,13 +73,13 @@ function Slider:click(x, y, but)
     end
 end
 
-function Slider:clickRelease(x, y, but)
+function Slider:clickRelease(_, _, but)
     if but == 1 then
         self.held = false
     end
 end
 
-function Slider:tick(dt)
+function Slider:tick(_)
     if self.held then
         self:setValue((self.selector.previousX + love.mouse.getX() - self.selector.clickedX) / self.w)
     end
@@ -107,25 +92,19 @@ function Slider:setValue(new_value)
 end
 
 function Slider:getValue(lower, higher)
-    local lower, higher = not higher and 0 or lower, higher or lower or 1
+    lower, higher = not higher and 0 or lower, higher or lower or 1
 
     return (self.selector.x / self.w) * (higher - lower) + lower
 end
 
 function Slider:setDefault()
-    self.selector.x = math.floor(self.default * self.w + 0.5)
+    self.selector.x = math.floor(self.default_value * self.w + 0.5)
 end
 
 -- slide fnc
 
-function slide.new(prototype)
-    local obj = uiobj.new(prototype)
-
-    setmetatable(obj, Slider_meta) ---@cast obj Slider
-
-    obj:setDefault()
-
-    return obj
+function Slider:new()
+    self:setDefault()
 end
 
-return slide
+return Slider

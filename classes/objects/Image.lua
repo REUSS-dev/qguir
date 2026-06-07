@@ -1,38 +1,13 @@
 -- image
-local image = {}
-
-local uiobj = require("classes.ObjectUI")
 
 -- documentation
 
 ---@alias ImageDisplayMode "normal"|"stretch"|"limit"
 ---@alias ImageDrawCache {x: integer, y: integer, wscale: number, hscale: number}
 
--- config
-
-image.name = "Image"
-image.aliases = {}
-image.rules = {
-    {"layout", {w = "fill", h = "fill"}},
-	{"palette", {color = {1, 1, 1, 1}}},
-
-	{{"image", "img", "picture"}, "image", nil},
-	{{"displayMode", "display"}, "display", "normal"},
-
-    {{"r", "radius", "rounding", "round"}, "r", nil}
-}
-
--- consts
-
-
-
 -- vars
 
 local x, y, w, h, r
-
--- init
-
-
 
 -- fnc
 
@@ -43,17 +18,30 @@ end
 -- classes
 
 ---@class Image : ObjectUI
+---@field ObjectUI ObjectUI
 ---@field r number Radius of round corner
 ---@field image love.Image
 ---@field display ImageDisplayMode
 ---@field drawCache ImageDrawCache
-local Image = {}
-local Image_meta = {__index = Image}
-setmetatable(Image, {__index = uiobj.class}) -- Set parenthesis
+local Image = {
+	name = "Image",
+	rules = {
+		"palette",
+		
+		{{"image", "img", "picture"}, "image"},
+		{{"displayMode", "display"}, "display", "normal"},
+    	{{"r", "radius", "rounding", "round"}, "r"}
+	},
+	default = {
+		w = "fill", h = "fill",
+		color = {1, 1, 1 ,1},
+		display = "normal"
+	}
+}
 
 function Image:paint()
     love.graphics.setColor(self.palette[1])
-    
+
 	if self.r then
 		x, y, r, w, h = self.drawCache.x, self.drawCache.y, self.image:getWidth() * self.drawCache.wscale, self.image:getHeight() * self.drawCache.hscale, self.r
 		love.graphics.stencil(stencil_function, "increment", 0, true)
@@ -74,7 +62,7 @@ function Image:paint()
 end
 
 function Image:autolayout(fill_w, fill_h)
-	local ow, oh = uiobj.class.autolayout(self, fill_w, fill_h)
+	local ow, oh = self.ObjectUI.autolayout(self, fill_w, fill_h)
 
 	if not ow or not oh then
 		if self.layout.w == "hug" then
@@ -124,7 +112,7 @@ function Image:autolayout(fill_w, fill_h)
 end
 
 function Image:resize(new_w, new_h)
-	uiobj.class.resize(self, new_w, new_h)
+	self.ObjectUI.resize(self, new_w, new_h)
 
 	self:calculateDrawParameters()
 end
@@ -167,20 +155,14 @@ end
 
 -- image fnc
 
-function image.new(prototype)
-    local obj = uiobj.new(prototype)
-    setmetatable(obj, Image_meta)
-	---@cast obj Image
-
-	if obj.display ~= "normal" and obj.display ~= "stretch" and obj.display ~= "limit" then
-		error("Display mode of an image can be: normal, stretch, limit. Got: " .. obj.display)
+function Image:new()
+	if self.display ~= "normal" and self.display ~= "stretch" and self.display ~= "limit" then
+		error("Display mode of an image can be: normal, stretch, limit. Got: " .. self.display)
 	end
 
-	if not obj.image then
+	if not self.image then
 		error("Image must be provided for an Image object")
 	end
-
-    return obj
 end
 
-return image
+return Image
