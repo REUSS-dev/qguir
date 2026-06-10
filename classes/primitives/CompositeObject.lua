@@ -133,12 +133,8 @@ function CompositeObject:remove(to_remove)
     end
 end
 
-function CompositeObject:create(object_type)
-	return assert(gui[object_type or self], "There is no registered UI object with a name \"" .. object_type .. "\"") -- allows to call both with a function call "." and method call ":"
-end
-
 function CompositeObject:createChild(object_type)
-	local descriptor = assert(gui[object_type], "There is no registered UI object with a name \"" .. object_type .. "\"")
+	local descriptor = self:create(object_type)
 
 	local function childinit(prototype)
 		local new_child = descriptor(prototype)
@@ -148,6 +144,14 @@ function CompositeObject:createChild(object_type)
 	end
 
 	return childinit
+end
+
+function CompositeObject:create(object_type)
+	return assert(self:getObjectClass(object_type or self), "There is no registered UI object with a name \"" .. object_type .. "\"") -- allows to call both with a function call "." and method call ":"
+end
+
+function CompositeObject:getObjectClass(object_type)
+	return gui[object_type]
 end
 
 --#region Layout
