@@ -2,7 +2,7 @@
 
 ---@class Button : CompositeObject
 ---@field held boolean Flag if button is currently held (Left mouse button) by user
----@field action fun() Button action callback. Triggers ONLY when user presses and releases LMB on button object
+---@field action fun(self: Button) Button action callback. Triggers ONLY when user presses and releases LMB on button object
 ---@field text string Button text
 ---@field font love.Font Button text font
 ---@field originalColor ColorTable
@@ -23,7 +23,6 @@ local Button = {
 			border = {0, 0.5, 0, 0.4}
 		},
 
-		action = function()end,
 		text = "Button",
 		font = love.graphics.getFont()
 	},
@@ -62,6 +61,9 @@ function Button:keyPress(key)
     if key == "return" then
         self:action()
     end
+end
+
+function Button:action()
 end
 
 -- button fnc
