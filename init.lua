@@ -504,7 +504,7 @@ function stellar.hook(force)
 		love_resize(w, h)
 	end
 
-	stellar.loadExternalObjects("classes/primitives")
+	stellar.loadExternalObjects(selfpath .. "/classes/primitives")
 
 	local new_canvas = stellar.createCanvas()
 	stellar.storeCanvas(1, new_canvas)
