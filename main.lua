@@ -6,13 +6,10 @@ function love.load()
     love.keyboard.setKeyRepeat(true)
 
     gui = require("init").hook()
-    gui.loadExternalObjects("classes")
+    gui.loadExternalObjects("classes/objects")
 
 	gui.getCanvas().layout.growth = "horizontal"
 	gui.getCanvas().layout.padding[2] = 80
-	gui.getCanvas().layout.padding[2] = 80
-
-	DEBUG = true
 
     local box1 = gui.Image{w = "fill", h = "fill", image = love.graphics.newImage("test.png"), display = "limit"}
 
