@@ -35,6 +35,10 @@ function Label:autolayout(fill_w, fill_h)
 	local ow, oh = self.ObjectUI.autolayout(self, fill_w, fill_h)
 
 	if not ow or not oh then
+		if not ow and self.layout.w == "fill" then
+			return nil, nil
+		end
+
 		local max_width, wrapped_lines = self.font:getWrap(self.text, ow or math.huge)
 
 		if self.layout.w == "hug" then

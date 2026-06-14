@@ -268,7 +268,7 @@ function stellar.activate_object(obj)
 end
 
 ---Loads object(s) from a specified path
----@param path string
+---@param path string?
 ---@param skip_init boolean? Skip ObjectUI:stellar_activate() call. This flag is used internally.
 ---@return ObjectUI[]
 function stellar.loadExternalObjects(path, skip_init)

@@ -75,6 +75,10 @@ function Image:autolayout(fill_w, fill_h)
 			end
 
 			if oh then
+				if oh == self.h then
+					return self.w, self.h
+				end
+
 				local img_h = self.image:getHeight()
 				local scale = oh / img_h
 
@@ -83,6 +87,8 @@ function Image:autolayout(fill_w, fill_h)
 				end
 
 				ow = math.floor(self.image:getWidth() * scale + .5)
+			else
+				return 0, nil
 			end
 		elseif self.layout.h == "hug" then
 			if self.display == "stretch" then
@@ -90,6 +96,10 @@ function Image:autolayout(fill_w, fill_h)
 			end
 
 			if ow then
+				if ow == self.w then
+					return self.w, self.h
+				end
+
 				local img_w = self.image:getWidth()
 				local scale = ow / img_w
 
@@ -98,6 +108,8 @@ function Image:autolayout(fill_w, fill_h)
 				end
 
 				oh = math.floor(self.image:getHeight() * scale + .5)
+			else
+				return nil, 0
 			end
 		end
 
