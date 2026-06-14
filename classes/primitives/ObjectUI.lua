@@ -326,6 +326,14 @@ end
 function ObjectUI:clickReleaseExterior(x, y, but, orginalClicked)
 end
 
+---Perform wheel move action
+---@param x number
+---@param y number
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:wheel(x, y)
+	self.parent:wheel(x, y)
+end
+
 ---React on UI object getting keyboard focus<br>**This function is virtual and must be defined in a child class**
 function ObjectUI:gainFocus()
     self.focus = true

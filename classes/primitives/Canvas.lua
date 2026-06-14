@@ -22,6 +22,9 @@ function CanvasObject:resize(new_w, new_h)
 	self.h = new_h
 end
 
+function CanvasObject:wheel()
+end
+
 function CanvasObject:new()
 	self.x = self.x or 0
 	self.y = self.y or 0

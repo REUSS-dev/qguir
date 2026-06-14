@@ -374,7 +374,7 @@ function stellar.hook(force)
 
     --- Set up callbacks
     
-    local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput, love_resize = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc, love.resize or nopFunc
+    local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput, love_resize, love_wheelmoved = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc, love.resize or nopFunc, love.wheelmoved or nopFunc
 
     love.update = function(dt)
         love_update(dt)
@@ -502,6 +502,14 @@ function stellar.hook(force)
 		end
 
 		love_resize(w, h)
+	end
+
+	love.wheelmoved = function (x, y)
+		if currentHl then
+            if currentHl:isInteractible() then
+				currentHl:wheel(x, y)
+			end
+		end
 	end
 
 	stellar.loadExternalObjects(selfpath .. "/classes/primitives")
