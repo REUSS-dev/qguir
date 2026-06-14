@@ -179,11 +179,13 @@ function ObjectUI:getHeight()
     return self.h
 end
 
-function ObjectUI:resize(new_w, new_h)
+function ObjectUI:resize(new_w, new_h, relayout)
 	self.w = new_w
 	self.h = new_h
 	
-	self.parent:relayout()
+	if relayout then
+		self.parent:relayout()
+	end
 end
 
 --#region Layout

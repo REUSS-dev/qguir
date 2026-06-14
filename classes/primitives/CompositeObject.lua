@@ -11,19 +11,22 @@ local gui = require("stellargui")
 ---@field border_flag boolean
 ---@field bsize number
 ---@field r number
+---@field hoverSelf boolean
 local CompositeObject = {
 	name = "CompositeObject",
 	aliases = {"Composite", "Container"},
 	rules = {
 		"palette",
 		{{"r", "radius"}, "r"},
-		{{"bsize", "border_size", "borderSize"}, "bsize"}
+		{{"bsize", "border_size", "borderSize"}, "bsize"},
+		{{"hover", "hoverSelf", "hover_self"}, "hoverSelf"}
 	},
 	default = {
 		w = "hug",
 		h = "hug",
 		r = 0,
-		bsize = 3
+		bsize = 3,
+		hoverSelf = false
 	}
 }
 
@@ -42,11 +45,7 @@ function CompositeObject:checkHover(x, y)
         hlObject = uiobject:isActive() and uiobject:checkHover(x, y) or hlObject
     end
 
-    if not hlObject then
-        return false
-    end
-
-    return hlObject
+    return hlObject or self.hoverSelf and self
 end
 
 ---Hide all objects im a composite
@@ -184,10 +183,10 @@ function CompositeObject:relayout()
 		return
 	end
 
-	self:autolayout(self.w, self.h)
+	self:autolayout(self.w, self.h, true)
 end
 
-function CompositeObject:autolayout(free_w, free_h)
+function CompositeObject:autolayout(free_w, free_h, relayout)
 	local w, h = self.ObjectUI.autolayout(self, free_w, free_h)
 
 	local layout = self.layout
@@ -215,9 +214,9 @@ function CompositeObject:autolayout(free_w, free_h)
 	local layout_object_count = 0
 
 	for i, object in ipairs(self.objects) do
-		if object:canLayout() then
-			local ow, oh = object:autolayout(internal_w, internal_h)
+		local ow, oh = object:autolayout(internal_w, internal_h)
 
+		if object:canLayout() then
 			object_sizes[i] = {ow, oh}
 
 			if not ow then
@@ -387,7 +386,7 @@ function CompositeObject:autolayout(free_w, free_h)
 
 	if w and h then
 		if w ~= self.w or h ~= self.h then
-			self:resize(w, h)
+			self:resize(w, h, relayout)
 		end
 
 		self:layout_deploy()
