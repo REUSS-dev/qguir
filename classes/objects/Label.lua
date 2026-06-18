@@ -31,8 +31,8 @@ function Label:paint()
     love.graphics.printf(self.textCache.textVisual, 0, self.textCache.y, self.w, self.layout.horizontal)
 end
 
-function Label:autolayout(fill_w, fill_h)
-	local ow, oh = self.ObjectUI.autolayout(self, fill_w, fill_h)
+function Label:getLayoutSize(fill_w, fill_h)
+	local ow, oh = self.ObjectUI.getLayoutSize(self, fill_w, fill_h)
 
 	if not ow or not oh then
 		if not ow and self.layout.w == "fill" then

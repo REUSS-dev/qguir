@@ -61,8 +61,8 @@ function Image:paint()
 	love.graphics.draw(self.image, self.drawCache.x, self.drawCache.y, 0, self.drawCache.wscale, self.drawCache.hscale)
 end
 
-function Image:autolayout(fill_w, fill_h)
-	local ow, oh = self.ObjectUI.autolayout(self, fill_w, fill_h)
+function Image:getLayoutSize(fill_w, fill_h)
+	local ow, oh = self.ObjectUI.getLayoutSize(self, fill_w, fill_h)
 
 	if not ow or not oh then
 		if self.layout.w == "hug" then

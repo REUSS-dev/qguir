@@ -178,8 +178,16 @@ function CompositeObject:setPadding(left, top, right, bottom)
 	return self
 end
 
+function CompositeObject:getLayoutSize(w, h)
+	if self.w and self.h and self.layout.w ~= "fill" and self.layout.h ~= "fill" then
+		return self.w, self.h
+	end
+
+	return self:autolayout(w, h)
+end
+
 function CompositeObject:relayout()
-	if not self.parent then
+	if not self.w then
 		return
 	end
 
@@ -187,7 +195,7 @@ function CompositeObject:relayout()
 end
 
 function CompositeObject:autolayout(free_w, free_h, relayout)
-	local w, h = self.ObjectUI.autolayout(self, free_w, free_h)
+	local w, h = self.ObjectUI.getLayoutSize(self, free_w, free_h)
 
 	local layout = self.layout
 
@@ -214,7 +222,7 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 	local layout_object_count = 0
 
 	for i, object in ipairs(self.objects) do
-		local ow, oh = object:autolayout(internal_w, internal_h)
+		local ow, oh = object:getLayoutSize(internal_w, internal_h)
 
 		if object:canLayout() then
 			object_sizes[i] = {ow, oh}
@@ -332,7 +340,7 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 	if layout.growth == "horizontal" then
 		for i, object in ipairs(self.objects) do
 			if object:canLayout() then
-				local ow, oh = object:autolayout(primary_fills[i], internal_h)
+				local ow, oh = object:getLayoutSize(primary_fills[i], internal_h)
 
 				object_sizes[i] = {ow, oh}
 			else
@@ -342,7 +350,7 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 	elseif layout.growth == "vertical" then
 		for i, object in ipairs(self.objects) do
 			if object:canLayout() then
-				local ow, oh = object:autolayout(internal_w, primary_fills[i])
+				local ow, oh = object:getLayoutSize(internal_w, primary_fills[i])
 
 				object_sizes[i] = {ow, oh}
 			else

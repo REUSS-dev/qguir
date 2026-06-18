@@ -201,7 +201,7 @@ end
 ---@param fill_h number? Height value to be used if height parameter is FILL
 ---@return number? width Calculated object width
 ---@return number? height Calculated object height
-function ObjectUI:autolayout(fill_w, fill_h)
+function ObjectUI:getLayoutSize(fill_w, fill_h)
 	local layout = self.layout
 
 	-- Width calculation
