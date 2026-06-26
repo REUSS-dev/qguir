@@ -35,31 +35,23 @@ local CompositeObject = {
 ---@param y pixels Mouse Y position in pixels
 ---@return ObjectUI|false hover Returns object pointer if the mouse if hovering on the object, false otherwise
 function CompositeObject:checkHover(x, y)
-    if not self.ObjectUI.checkHover(self, x, y) and not self:hasFocus() then
+	local boundaries_hover = self.ObjectUI.checkHover(self, x, y)
+	
+    if not boundaries_hover and not self:hasFocus() then
         return false
     end
 
     local hlObject
 
     for _, uiobject in ipairs(self.objects) do
-        hlObject = uiobject:isActive() and uiobject:checkHover(x, y) or hlObject
+        hlObject = uiobject:isInteractible() and uiobject:checkHover(x, y) or hlObject
     end
 
-    return hlObject or self.hoverSelf and self
-end
+	if hlObject then
+		return hlObject
+	end
 
----Hide all objects im a composite
-function CompositeObject:hide()
-    for _, uiobject in ipairs(self.objects) do
-        uiobject:hide()
-    end
-end
-
----Show all objects im a composite
-function CompositeObject:show()
-    for _, uiobject in ipairs(self.objects) do
-        uiobject:show()
-    end
+    return boundaries_hover and self.hoverSelf and self
 end
 
 ---Tick all UI objects in a composite object.

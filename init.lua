@@ -350,7 +350,7 @@ function stellar.drawMousePosition()
     end
 
 	if currentHl then
-		text = "UI object" .. "\n" .. text
+		text = currentHl.name .. "\n" .. text
 	end
 
     love.graphics.print(text, love.mouse.getX(), love.mouse.getY() - love.graphics.getFont():getHeight())

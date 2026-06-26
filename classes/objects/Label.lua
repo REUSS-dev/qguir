@@ -103,6 +103,8 @@ function Label:generateTextCache()
 
         self.textCache.textVisual = tocut .. ".."
     end
+
+	self:setInteractible(false)
 end
 
 return Label

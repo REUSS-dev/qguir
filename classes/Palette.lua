@@ -68,6 +68,9 @@ end
 
 ---@class Palette
 ---@field container {[ColorIndex]: ColorTable}
+---@field main ColorTable
+---@field border ColorTable
+---@field text ColorTable
 local Palette = {}
 
 function Palette:__index(key)
