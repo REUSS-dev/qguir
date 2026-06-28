@@ -104,10 +104,12 @@ local function stellar_update(dt)
 
         if currentHl then
             currentHl:hoverOff(currentHl:convertGlobalCoords(x, y))
+			currentHl:redraw()
         end
 
         if hlObject then
             newCursor = hlObject:hoverOn(hlObject:convertGlobalCoords(x, y)) or newCursor
+			hlObject:redraw()
         end
 
         if newCursor ~= currentCursor then
@@ -123,11 +125,11 @@ end
 
 ---Standard draw function for the functionality of StellarGUI
 local function stellar_draw()
-    love.graphics.push("transform")
-
     current_canvas:paint()
+end
 
-    love.graphics.pop()
+local function stellar_run()
+	
 end
 
 ---Register UI object type descriptor
@@ -410,11 +412,13 @@ function stellar.hook(force)
                     x == lastClickPosition[1] and y == lastClickPosition[2]
                 then
                     currentHl:doubleClick(cx, cy, but)
+					currentHl:redraw()
                     lastClickTime = 0 -- avoid counting possible third click as double click
                     return
                 end
 
 				currentHl:click(cx, cy, but)
+				currentHl:redraw()
 
                 lastClickButton, lastClickTime, lastClickPosition[1], lastClickPosition[2], lastClickedObject = but, love.timer.getTime(), x, y, currentHl
             end
@@ -433,7 +437,10 @@ function stellar.hook(force)
 			local cx, cy = heldObject[but]:convertGlobalCoords(x, y)
 
             if heldObject[but]:isInteractible() then
-                if not heldObject[but]:clickRelease(cx, cy, but) then
+				local pass = heldObject[but]:clickRelease(cx, cy, but)
+				heldObject[but]:redraw()
+
+                if not pass then
                     heldObject[but] = nil
                     return
                 end
@@ -442,6 +449,7 @@ function stellar.hook(force)
             if currentHl and (heldObject[but] ~= currentHl) and currentHl:isInteractible() then
 				local cx, cy = currentHl:convertGlobalCoords(x, y)
                 currentHl:clickReleaseExterior(cx, cy, but, heldObject[but])
+				currentHl:redraw()
 
                 heldObject[but] = nil
                 return
@@ -453,14 +461,18 @@ function stellar.hook(force)
 
     love.keypressed = function (key, scancode, isrepeat)
         if focusedObject and focusedObject:isInteractible() then
-            if focusedObject:keyPress(
+			local revoke_focus = focusedObject:keyPress(
                 key,
                 love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl"),
                 love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift"),
                 love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt"),
                 scancode,
                 isrepeat
-            ) then
+            )
+
+			focusedObject:redraw()
+			
+            if revoke_focus then
                 focusedObject:loseFocus()
                 focusedObject = nil
             end
@@ -471,14 +483,17 @@ function stellar.hook(force)
 
     love.keyreleased = function (key, scancode, isrepeat)
         if focusedObject and focusedObject:isInteractible() then
-            if focusedObject:keyRelease(
+            local revoke_focus = focusedObject:keyRelease(
                 key,
                 love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl"),
                 love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift"),
                 love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt"),
                 scancode,
                 isrepeat
-            ) then
+            )
+			focusedObject:redraw()
+			
+			if revoke_focus then
                 focusedObject:loseFocus()
                 focusedObject = nil
             end
@@ -490,6 +505,7 @@ function stellar.hook(force)
     love.textinput = function (text)
         if focusedObject and focusedObject:isInteractible() then
             focusedObject:textinput(text)
+			focusedObject:redraw()
         else
             love_textinput(text)
         end
@@ -521,6 +537,40 @@ function stellar.hook(force)
 	hooked = true
 
     return stellar
+end
+
+---@diagnostic disable-next-line: inject-field
+function love.run()
+	stellar.hook()
+
+	if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
+
+	-- We don't want the first frame's dt to include time taken by love.load.
+	if love.timer then love.timer.step() end
+
+	local dt = 0
+
+	return function()
+		if love.event then
+			love.event.pump()
+			for name, a,b,c,d,e,f in love.event.poll() do
+				if name == "quit" then
+					if not love.quit or not love.quit() then
+						return a or 0
+					end
+				end
+				love.handlers[name](a,b,c,d,e,f)
+			end
+		end
+
+		if love.timer then dt = love.timer.step() end
+
+		if love.update then love.update(dt) end
+
+		current_canvas:performRepaint()
+
+		if love.timer then love.timer.sleep(0.001) end
+	end
 end
 
 return stellar

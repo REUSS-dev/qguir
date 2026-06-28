@@ -21,6 +21,8 @@
 ---@field protected parent CompositeObject UI object parent
 ---@field protected defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
 ---@field protected layout LayoutProperties
+---@field public pleaseRedraw boolean
+---@field public pictureDirty boolean
 local ObjectUI = {
 	name = "ObjectUI",
 	extends = false,
@@ -34,7 +36,9 @@ local ObjectUI = {
 		horizontal = "center",
 		vertical = "center",
 		gap = 10,
-	}
+	},
+
+	opaque = false
 }
 
 --- Flags
@@ -275,6 +279,48 @@ end
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:hoverOff(x, y)
     self.hl = false
+end
+
+-- Draw logic
+
+function ObjectUI:performRepaint()
+	if not self.pleaseRedraw then
+		return
+	end
+
+	local tx, ty = self:getTranslation()
+	love.graphics.translate(tx, ty)
+	self:paint()
+	love.graphics.translate(-tx, -ty)
+
+	self:resetDirty()
+end
+
+function ObjectUI:markDirty()
+	if self.pictureDirty then
+		return
+	end
+
+	self.pictureDirty = true
+	self.parent:markDirty()
+end
+
+function ObjectUI:redraw()
+	if self.pleaseRedraw then
+		return
+	end
+
+	if not self.opaque then
+		self.parent:redraw()
+	end
+
+	self.pleaseRedraw = true
+	self:markDirty()
+end
+
+function ObjectUI:resetDirty()
+	self.pictureDirty = false
+	self.pleaseRedraw = false
 end
 
 --- Virtuals

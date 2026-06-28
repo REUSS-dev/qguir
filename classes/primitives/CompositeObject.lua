@@ -27,7 +27,9 @@ local CompositeObject = {
 		r = 0,
 		bsize = 3,
 		hoverSelf = false
-	}
+	},
+
+	opaque = false
 }
 
 ---Check, if coordinates provided are in boundaries of any of UI objects in the composite object
@@ -86,19 +88,39 @@ function CompositeObject:paint()
 			local tx, ty = uiobject:getCoordinates()
             love.graphics.translate(tx, ty)
             uiobject:paint()
+			uiobject:resetDirty()
             love.graphics.translate(-tx, -ty)
         end
     end
+end
 
-	if DEBUG then
-		love.graphics.setColor(1, 1, 1)
-
-		love.graphics.rectangle("line", 0, 0, self.w, self.h)
-		love.graphics.print(string.format("Container; width: %s, height: %s\nGrowth: %s (%s-%s); Gap: %s\nPadding: [%d, %d, %d, %d]\nActual dimensions: %d %d", self.layout.w, self.layout.h, self.layout.growth, self.layout.horizontal, self.layout.vertical, self.layout.gap, self.layout.padding[1], self.layout.padding[2], self.layout.padding[3], self.layout.padding[4], self.w, self.h), 10, 10)
-	
-		love.graphics.setColor(0.5, 0.5, 1)
-		love.graphics.rectangle("line", self.layout.padding[1], self.layout.padding[2], self.w - self.layout.padding[1] - self.layout.padding[3], self.h - self.layout.padding[2] - self.layout.padding[4])
+function CompositeObject:performRepaint()
+	if not self.pictureDirty then
+		return
 	end
+
+	if self.pleaseRedraw then
+		self:resetDirty()
+
+		print("repaint", self.name)
+
+
+
+		local tx, ty = self:getTranslation()
+		love.graphics.translate(tx, ty)
+		self:paint()
+		love.graphics.translate(-tx, -ty)
+
+		return
+	end
+
+	self.pictureDirty = false
+
+	for _, uiobject in ipairs(self.objects) do
+        if uiobject:isDrawn() then
+            uiobject:performRepaint()
+        end
+    end
 end
 
 ---Add new object to composite object
@@ -184,6 +206,7 @@ function CompositeObject:relayout()
 	end
 
 	self:autolayout(self.w, self.h, true)
+	self:redraw()
 end
 
 function CompositeObject:autolayout(free_w, free_h, relayout)
@@ -519,6 +542,10 @@ function CompositeObject:new()
 
 	self.fill_flag = self.palette.main and true or false
 	self.border_flag = self.palette.border and true or false
+
+	if not self.border_flag and self.fill_flag and self.palette.main[4] == 1 then
+		self.opaque = true
+	end
 end
 
 return CompositeObject
