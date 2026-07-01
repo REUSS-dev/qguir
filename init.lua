@@ -128,10 +128,6 @@ local function stellar_draw()
     current_canvas:paint()
 end
 
-local function stellar_run()
-	
-end
-
 ---Register UI object type descriptor
 ---@param typeDescriptor ObjectUI
 local function registerType(typeDescriptor)
@@ -569,7 +565,7 @@ function love.run()
 
 		current_canvas:performRepaint()
 
-		if love.timer then love.timer.sleep(0.001) end
+		if love.timer then love.timer.sleep(0.01) end
 	end
 end
 

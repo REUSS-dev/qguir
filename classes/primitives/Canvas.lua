@@ -21,10 +21,12 @@ function CanvasObject:performRepaint()
 	love.graphics.origin()
 
 	love.graphics.setCanvas({self.canvas, stencil = true})
+	love.graphics.setBlendMode("alpha", "alphamultiply")
 
 	self.CompositeObject.performRepaint(self)
 
 	love.graphics.setCanvas()
+	love.graphics.setBlendMode("replace", "premultiplied")
 	love.graphics.setColor(1, 1, 1, 1)
 	love.graphics.draw(self.canvas, 0, 0)
 
