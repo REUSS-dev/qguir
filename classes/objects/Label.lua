@@ -63,10 +63,13 @@ end
 
 function Label:setText(new_text)
 	self.text = new_text
+	self:generateTextCache()
 
 	if self.parent then
 		self.parent:relayout()
 	end
+
+	self:redraw()
 end
 
 function Label:resize(new_w, new_h)
