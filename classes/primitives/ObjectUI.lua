@@ -45,16 +45,32 @@ local ObjectUI = {
 
 ---Hide the UI object. Disables paint and tick for a UI object.
 function ObjectUI:hide()
+	if not (self.draw or self.update or self.interactible) then
+		return
+	end
+
     self.draw = false
     self.update = false
     self.interactible = false
+
+	if self.parent then
+		self.parent:relayout()
+	end
 end
 
 ---Show the UI object. Enable paint and tick for a UI object.
 function ObjectUI:show()
+	if self.draw and self.update and self.interactible then
+		return
+	end
+
     self.draw = true
     self.update = true
     self.interactible = true
+
+	if self.parent then
+		self.parent:relayout()
+	end
 end
 
 ---Freeze the UI object. Disables tick for a UI object.
