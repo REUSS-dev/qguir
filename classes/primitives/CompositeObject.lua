@@ -12,6 +12,10 @@ local gui = require("stellargui")
 ---@field bsize number
 ---@field r number
 ---@field hoverSelf boolean
+---@field shear boolean
+---@field scroll boolean
+---@field currentScroll integer
+---@field maxScroll integer
 local CompositeObject = {
 	name = "CompositeObject",
 	aliases = {"Composite", "Container"},
@@ -19,14 +23,18 @@ local CompositeObject = {
 		"palette",
 		{{"r", "radius"}, "r"},
 		{{"bsize", "border_size", "borderSize"}, "bsize"},
-		{{"hover", "hoverSelf", "hover_self"}, "hoverSelf"}
+		{{"hover", "hoverSelf", "hover_self"}, "hoverSelf"},
+		{{"shear", "shearing"}, "shear"},
+		{{"scroll", "scrollable"}, "scroll"},
 	},
 	default = {
 		w = "hug",
 		h = "hug",
 		r = 0,
 		bsize = 3,
-		hoverSelf = false
+		hoverSelf = false,
+		shear = false,
+		scrollable = false
 	},
 
 	opaque = false
@@ -38,7 +46,7 @@ local CompositeObject = {
 ---@return ObjectUI|false hover Returns object pointer if the mouse if hovering on the object, false otherwise
 function CompositeObject:checkHover(x, y)
 	local boundaries_hover = self.ObjectUI.checkHover(self, x, y)
-	
+
     if not boundaries_hover and not self:hasFocus() then
         return false
     end
@@ -66,6 +74,16 @@ function CompositeObject:tick(dt)
     end
 end
 
+function CompositeObject:getTranslation(ignore_scroll)
+	local tx, ty = self.ObjectUI.getTranslation(self)
+
+	if ignore_scroll then
+		return tx, ty
+	end
+
+	return tx, ty - self.currentScroll
+end
+
 ---Paint all UI objects in a composite object.
 function CompositeObject:paint()
 	if self.fill_flag then
@@ -83,6 +101,20 @@ function CompositeObject:paint()
 		love.graphics.setLineWidth(old_bsize)
 	end
 
+	local sx, sy, sw, sh
+
+	if self.shear then
+		sx, sy, sw, sh = love.graphics.getScissor()
+		local tx, ty = self:getTranslation(true)
+		love.graphics.intersectScissor(tx, ty, self.w, self.h)
+	end
+
+	local saved_scroll = self.currentScroll
+
+	if self.scroll then
+		love.graphics.translate(0, -saved_scroll)
+	end
+
     for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
 			local tx, ty = uiobject:getCoordinates()
@@ -92,6 +124,14 @@ function CompositeObject:paint()
             love.graphics.translate(-tx, -ty)
         end
     end
+
+	if self.scroll then
+		love.graphics.translate(0, saved_scroll)
+	end
+
+	if self.shear then
+		love.graphics.setScissor(sx, sy, sw, sh)
+	end
 end
 
 function CompositeObject:performRepaint()
@@ -102,11 +142,7 @@ function CompositeObject:performRepaint()
 	if self.pleaseRedraw then
 		self:resetDirty()
 
-		print("repaint", self.name)
-
-
-
-		local tx, ty = self:getTranslation()
+		local tx, ty = self:getTranslation(true)
 		love.graphics.translate(tx, ty)
 		self:paint()
 		love.graphics.translate(-tx, -ty)
@@ -116,11 +152,24 @@ function CompositeObject:performRepaint()
 
 	self.pictureDirty = false
 
+	local sx, sy, sw, sh
+	if self.shear then
+		sx, sy, sw, sh = love.graphics.getScissor()
+		local tx, ty = self:getTranslation(true)
+		love.graphics.intersectScissor(tx, ty, self.w, self.h)
+	end
+
+	local saved_scroll = self.currentScroll
+
 	for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
             uiobject:performRepaint()
         end
     end
+
+	if self.shear then
+		love.graphics.setScissor(sx, sy, sw, sh)
+	end
 end
 
 ---Add new object to composite object
@@ -532,6 +581,31 @@ function CompositeObject:layout_deploy()
 			end
 		end
 	end
+	
+	if self.scroll then
+		for i = #self.objects, 1, -1 do
+			local object = self.objects[i]
+
+			if not object.layout.ignore then
+				self.maxScroll = math.max(0, object.y + object.h - self.h)
+				self:moveScroll(0)
+				break
+			end
+		end
+	end
+end
+
+function CompositeObject:wheel(x, y)
+	if not self.scroll then
+		self.ObjectUI.wheel(self, x, y)
+	end
+
+	self:moveScroll(y)
+end
+
+function CompositeObject:moveScroll(value)
+	self.currentScroll = math.max(0, math.min(self.maxScroll, self.currentScroll - 10*value))
+	self:redraw()
 end
 
 --#endregion
@@ -539,6 +613,8 @@ end
 ---Create new CompositeObject
 function CompositeObject:new()
     self.objects = {}
+	self.currentScroll = 0
+	self.maxScroll = 0
 
 	self.fill_flag = self.palette.main and true or false
 	self.border_flag = self.palette.border and true or false

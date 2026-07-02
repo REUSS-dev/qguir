@@ -152,9 +152,9 @@ end
 ---Returns translation for the UI object. Usable when passing output to love.graphics.translate()<br>Behavior of this method is altered in CompositeObject!
 ---@return pixels X coordinate of the object
 ---@return pixels Y coordinate of the object
-function ObjectUI:getTranslation()
+function ObjectUI:getTranslation(_)
 	local parent = self:getParent()
-	
+
 	local tx, ty = self.x, self.y
 
 	if parent then
@@ -162,7 +162,7 @@ function ObjectUI:getTranslation()
 
 		tx, ty = tx + ptx, ty + pty
 	end
-	
+
     return tx, ty
 end
 
@@ -272,7 +272,7 @@ end
 ---@param gy pixels Global mouse Y position in pixels
 ---@return ObjectUI|false hover Returns object pointer if the mouse if hovering on the object, false otherwise
 function ObjectUI:checkHover(gx, gy)
-	local tx, ty = self:getTranslation()
+	local tx, ty = self:getTranslation(true)
 
     return gx >= tx and gx <= tx + self.w and gy >= ty and gy <= ty + self.h and self
 end
@@ -322,6 +322,10 @@ function ObjectUI:markDirty()
 end
 
 function ObjectUI:redraw()
+	if not self.w then
+		return
+	end
+
 	if self.pleaseRedraw then
 		return
 	end
