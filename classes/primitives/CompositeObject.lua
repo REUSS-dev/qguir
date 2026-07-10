@@ -159,8 +159,6 @@ function CompositeObject:performRepaint()
 		love.graphics.intersectScissor(tx, ty, self.w, self.h)
 	end
 
-	local saved_scroll = self.currentScroll
-
 	for _, uiobject in ipairs(self.objects) do
         if uiobject:isDrawn() then
             uiobject:performRepaint()
@@ -304,42 +302,6 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 		end
 	end
 
-	-- Secondary dimension fill resolve
-
-	if layout.growth == "horizontal" then
-		if layout.h == "hug" then
-			local result_height
-
-			for i = 1, #self.objects do
-				local object_size = object_sizes[i]
-
-				result_height = result_height and math.max(result_height, object_size[2] or 0) or object_size[2]
-			end
-
-			if not result_height and layout_object_count ~= 0 then
-				error("Not a single fixed/hug height object inside a hug height container")
-			end
-
-			internal_h = result_height or 0
-		end
-	elseif layout.growth == "vertical" then
-		if layout.w == "hug" then
-			local result_width
-
-			for i = 1, #self.objects do
-				local object_size = object_sizes[i]
-
-				result_width = result_width and math.max(result_width, object_size[1] or 0) or object_size[1]
-			end
-
-			if not result_width and layout_object_count ~= 0 then
-				error("Not a single fixed/hug width object inside a hug width container")
-			end
-
-			internal_w = result_width or 0
-		end
-	end
-
 	-- Primary dimension fill resolve
 
 	local primary_fills = {}
@@ -381,7 +343,7 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 						vacant_space = vacant_space - objsize[2]
 					end
 				end
-				
+
 				local fill_pool = {}
 				local fill_base = math.floor(vacant_space / height_miss_count)
 				local ostatok = vacant_space % height_miss_count
@@ -407,8 +369,6 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 				local ow, oh = object:getLayoutSize(primary_fills[i], internal_h)
 
 				object_sizes[i] = {ow, oh}
-			else
-				object_sizes[i] = {ignore = true}
 			end
 		end
 	elseif layout.growth == "vertical" then
@@ -417,8 +377,61 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 				local ow, oh = object:getLayoutSize(internal_w, primary_fills[i])
 
 				object_sizes[i] = {ow, oh}
-			else
-				object_sizes[i] = {ignore = true}
+			end
+		end
+	end
+
+	-- Secondary dimension fill resolve
+
+	if layout.growth == "horizontal" then
+		if layout.h == "hug" then
+			local result_height
+
+			for i = 1, #self.objects do
+				local object_size = object_sizes[i]
+
+				result_height = result_height and math.max(result_height, object_size[2] or 0) or object_size[2]
+			end
+
+			if not result_height and layout_object_count ~= 0 and (width_miss_count == 0 or #primary_fills ~= 0) then
+				error("Not a single fixed/hug height object inside a hug height container")
+			end
+
+			internal_h = result_height or 0
+		end
+	elseif layout.growth == "vertical" then
+		if layout.w == "hug" then
+			local result_width
+
+			for i = 1, #self.objects do
+				local object_size = object_sizes[i]
+
+				result_width = result_width and math.max(result_width, object_size[1] or 0) or object_size[1]
+			end
+
+			if not result_width and layout_object_count ~= 0 and (height_miss_count == 0 or #primary_fills ~= 0) then
+				error("Not a single fixed/hug width object inside a hug width container")
+			end
+
+			internal_w = result_width or 0
+		end
+	end
+
+	-- Third pass
+	if layout.growth == "horizontal" then
+		for i, object in ipairs(self.objects) do
+			if object:canLayout() and not object_sizes[i][2] then
+				local ow, oh = object:getLayoutSize(primary_fills[i], internal_h)
+
+				object_sizes[i] = {ow, oh}
+			end
+		end
+	elseif layout.growth == "vertical" then
+		for i, object in ipairs(self.objects) do
+			if object:canLayout() and not object_sizes[i][1]  then
+				local ow, oh = object:getLayoutSize(internal_w, primary_fills[i])
+
+				object_sizes[i] = {ow, oh}
 			end
 		end
 	end

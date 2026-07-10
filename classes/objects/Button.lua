@@ -24,25 +24,17 @@ local Button = {
 		},
 
 		text = "Button",
-		font = love.graphics.getFont()
+		font = love.graphics.getFont(),
+		hover = true
 	},
 
 	defaultCursor = "hand"
 }
 
-function Button:tick(_)
-	if self.held then
-		self.palette.container[1] = self.originalColor.darker
-    elseif self.hl then
-        self.palette.container[1] = self.originalColor.brighter
-    else
-        self.palette.container[1] = self.originalColor
-    end
-end
-
 function Button:click(_, _, but)
     if but == 1 then
         self.held = true
+		self.palette.container[1] = self.originalColor.darker
     end
 end
 
@@ -50,7 +42,10 @@ function Button:clickRelease(_, _, but)
     if but == 1 then
         self.held = false
 
+		self.palette.container[1] = self.originalColor
+
         if self.hl then
+			self.palette.container[1] = self.originalColor.brighter
             self:action()
         end
     end
@@ -63,13 +58,28 @@ function Button:keyPress(key)
     end
 end
 
+function Button:hoverOn(x, y)
+	if not self.held then
+		self.palette.container[1] = self.originalColor.brighter
+	end
+
+	return self.ObjectUI.hoverOn(self, x, y)
+end
+
+function Button:hoverOff(x, y)
+	if not self.held then
+		self.palette.container[1] = self.originalColor
+	end
+
+	return self.ObjectUI.hoverOff(self, x, y)
+end
+
 function Button:action()
 end
 
 -- button fnc
 
 function Button:new()
-	self.checkHover = self.ObjectUI.checkHover
 	self.originalColor = self.palette:getColorByIndex(1)
 
 	self:createChild "Label" {

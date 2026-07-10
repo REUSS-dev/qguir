@@ -74,9 +74,12 @@ function CanvasObject:resize(new_w, new_h)
 	self.w = new_w
 	self.h = new_h
 
+	if self.canvas then
+		self.canvas:release()
+	end
+
 	self.canvas = love.graphics.newCanvas()
 	self:redraw()
-	collectgarbage("collect")
 end
 
 function CanvasObject:wheel()
