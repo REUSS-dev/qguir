@@ -17,6 +17,8 @@ local Palette = require("classes.Palette")
 
 -- init
 
+local currentFontStorage	---@type FontStorage
+
 local collection = {}	---@type {[string]: ObjectParser} Collection of parsers for UI objects parameters
 
 --#region Inbuilt parsers
@@ -66,7 +68,7 @@ function collection.layout(def, sink)
 			layout.ignore = def.static
 		end
 	end
-	
+
 	sink.layout = layout
 
 	if 	not width or
@@ -81,6 +83,44 @@ function collection.layout(def, sink)
 	end
 
     return true
+end
+
+---@param font string|love.Font
+---@return love.Font|table
+local function font_helper(font)
+	if type(font) == "userdata" then ---@cast font love.Font
+		assert(font.type and font:type() == "Font", "bad argument \"font\" to UI object initializer (love.Font, string, table expected, got " .. (font.type and font:type() or "userdata") .. ")")
+		return font
+	end
+
+	if type(font) == "number" then
+		return currentFontStorage:getFont("default", font)
+	end
+
+	if type(font) == "string" then
+		return currentFontStorage:getFont(currentFontStorage:parseFontIdentifier(font))
+	end
+
+	assert(type(font) == "table", "bad argument \"font\" to UI object initializer (love.Font, string, table expected, got " .. type(font) .. ")")
+
+	local fonts = {}
+	for k, f in pairs(font) do
+		fonts[k] = font_helper(f)
+	end
+
+	return fonts
+end
+
+function collection.font(def, sink)
+	local font = def.font or def.fonts
+
+	if not font then
+		return false
+	end
+
+	sink.font = font_helper(font)
+
+	return true
 end
 
 function collection.palette(def, sink)
@@ -167,6 +207,11 @@ function parse.resolve(definition, sink)
     end
 
     return sink
+end
+
+---@param storage FontStorage
+function parse.setFontStorage(storage)
+	currentFontStorage = storage
 end
 
 return parse

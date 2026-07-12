@@ -8,6 +8,7 @@ package.loaded["stellargui"] = stellar
 
 local utf = require("utf8")
 
+local FontStorage = require("classes.FontStorage")
 local parse = require("scripts.parse")
 
 -- documentation
@@ -40,6 +41,7 @@ local doubleClickTime = DEFAULT_DOUBLE_CLICK_TIME
 
 local object_descriptors = {}       ---@type table<string, ObjectUI>
 local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cursor}
+local fontStorage					---@type FontStorage
 
 local current_canvas				---@type CanvasObject
 local canvases = {}					---@type CanvasObject[]
@@ -330,6 +332,11 @@ function stellar.getObjectDescriptor(descriptor_name)
 	return object_descriptors[descriptor_name]
 end
 
+---@param path love.FileData|string
+function stellar.setDefaultFont(path)
+	fontStorage:registerFont("default", path)
+end
+
 --#region Debug functions
 
 function stellar.drawMousePosition()
@@ -467,7 +474,7 @@ function stellar.hook(force)
             )
 
 			focusedObject:redraw()
-			
+
             if revoke_focus then
                 focusedObject:loseFocus()
                 focusedObject = nil
@@ -488,7 +495,7 @@ function stellar.hook(force)
                 isrepeat
             )
 			focusedObject:redraw()
-			
+
 			if revoke_focus then
                 focusedObject:loseFocus()
                 focusedObject = nil
@@ -525,6 +532,9 @@ function stellar.hook(force)
 	end
 
 	stellar.loadExternalObjects(selfpath .. "/classes/primitives")
+
+	fontStorage = FontStorage()
+	parse.setFontStorage(fontStorage)
 
 	local new_canvas = stellar.createCanvas()
 	stellar.storeCanvas(1, new_canvas)

@@ -6,18 +6,16 @@ local utf = require("utf8")
 ---@field ObjectUI ObjectUI
 ---@field textCache table Set of data for printing button text. WARNING: This should be nullified on label size/text change.
 ---@field text string Button text
----@field font love.Font Button text font
 local Label = {
 	name = "Label",
 	rules = {
 		"palette",
 		{{"text", "label"}, "text"},
-    	{{"font"}, "font"},
 	},
 	default = {
 		w = "hug", h = "hug",
 		text = "Label",
-		font = love.graphics.getFont(),
+		font = 12,
 
 		horizontal = "left",
 		textColor = {1, 1, 1, 1}

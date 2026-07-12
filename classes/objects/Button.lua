@@ -4,14 +4,12 @@
 ---@field held boolean Flag if button is currently held (Left mouse button) by user
 ---@field action fun(self: Button) Button action callback. Triggers ONLY when user presses and releases LMB on button object
 ---@field text string Button text
----@field font love.Font Button text font
 ---@field originalColor ColorTable
 local Button = {
 	name = "Button",
 		rules = {
 		{{"action", "push", "press"}, "action"},
 		{{"text", "label"}, "text"},
-		{{"font"}, "font"},
 	},
 	extends = "CompositeObject",
 
@@ -24,7 +22,7 @@ local Button = {
 		},
 
 		text = "Button",
-		font = love.graphics.getFont(),
+		font = 12,
 		hover = true
 	},
 

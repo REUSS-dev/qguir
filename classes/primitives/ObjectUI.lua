@@ -21,13 +21,14 @@
 ---@field protected parent CompositeObject UI object parent
 ---@field protected defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
 ---@field protected layout LayoutProperties
+---@field protected font love.Font|table
 ---@field public pleaseRedraw boolean
 ---@field public pictureDirty boolean
 local ObjectUI = {
 	name = "ObjectUI",
 	extends = false,
 	aliases = {"uiobj"},
-	rules = {"layout"},
+	rules = {"layout", "font"},
 	default = {
 		w = 100,
 		h = 100,

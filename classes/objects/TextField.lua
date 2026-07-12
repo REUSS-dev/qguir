@@ -59,7 +59,6 @@ end
 ---@class TextField : ObjectUI
 ---@field ObjectUI ObjectUI
 ---@field text string[]
----@field font love.Font
 ---@field action fun(self: TextField)
 ---@field stencil fun() 
 ---@field textX number X text offset from TextField origin
@@ -85,7 +84,6 @@ local TextField = {
     {{"action", "enter", "return"}, "action"},
     {{"text"}, "text"},
     {{"placeholder", "default", "defaultText"}, "placeholder"},
-    {{"font"}, "font"},
     {{"oneline", "forceOneline", "force_oneline"}, "oneline"},
     {{"r", "radius", "rounding", "round"}, "r"},
     {{"password"}, "password"}
@@ -102,7 +100,7 @@ local TextField = {
 		action = function()end,
 		text = "",
 		placeholder = "",
-		font = love.graphics.getFont(),
+		font = 12,
 		oneline = false,
 		password = false
 	},
