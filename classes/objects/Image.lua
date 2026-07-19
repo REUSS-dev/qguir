@@ -27,7 +27,7 @@ local Image = {
 	name = "Image",
 	rules = {
 		"palette",
-		
+
 		{{"image", "img", "picture"}, "image"},
 		{{"displayMode", "display"}, "display", "normal"},
     	{{"r", "radius", "rounding", "round"}, "r"}

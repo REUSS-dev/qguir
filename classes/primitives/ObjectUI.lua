@@ -203,7 +203,7 @@ end
 function ObjectUI:resize(new_w, new_h, relayout)
 	self.w = new_w
 	self.h = new_h
-	
+
 	if relayout then
 		self.parent:relayout()
 	end

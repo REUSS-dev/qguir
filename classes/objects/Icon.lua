@@ -8,6 +8,7 @@ local Icons = {
 	ArrowRight = "ArrowRight",
 	ChevronDown = "ChevronDown",
 	ChevronLeft = "ChevronLeft",
+	ChevronRight = "ChevronRight",
 }
 
 -- classes
@@ -20,7 +21,6 @@ local Icon = {
 	name = "Icon",
 	rules = {
 		"palette",
-		
 		{{"style"}, "style"},
 		{{"weight"}, "weight"},
 	},
@@ -42,6 +42,7 @@ end
 function Icon:paintIcon()
 end
 
+---@param new_style Icons
 function Icon:setStyle(new_style)
 	self.style = assert(Icons[new_style], "Unknown Icon style: " .. new_style)
 
@@ -74,7 +75,11 @@ function Icon:paint_ChevronDown()
 end
 
 function Icon:paint_ChevronLeft()
-	love.graphics.line(self.w/3*2, self.h/3, self.w/5*2, self.h/2, self.w/3*2, self.w/3*2)
+	love.graphics.line(self.w/3*2, self.h/3, self.w/5*2, self.h/2, self.w/3*2, self.h/3*2)
+end
+
+function Icon:paint_ChevronRight()
+	love.graphics.line(self.w/3, self.h/3, self.w/5*3, self.h/2, self.w/3, self.h/3*2)
 end
 
 -- Icon fnc

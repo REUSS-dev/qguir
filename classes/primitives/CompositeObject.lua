@@ -316,7 +316,7 @@ function CompositeObject:autolayout(free_w, free_h, relayout)
 						vacant_space = vacant_space - objsize[1]
 					end
 				end
-				
+
 				local fill_pool = {}
 				local fill_base = math.floor(vacant_space / width_miss_count)
 				local ostatok = vacant_space % width_miss_count
@@ -594,7 +594,7 @@ function CompositeObject:layout_deploy()
 			end
 		end
 	end
-	
+
 	if self.scroll then
 		for i = #self.objects, 1, -1 do
 			local object = self.objects[i]
