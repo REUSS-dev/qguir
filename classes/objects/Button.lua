@@ -29,24 +29,20 @@ local Button = {
 	defaultCursor = "hand"
 }
 
-function Button:click(_, _, but)
-    if but == 1 then
-        self.held = true
-		self.palette.container[1] = self.originalColor.darker
-    end
+function Button:click_left()
+	self.held = true
+	self.palette.container[1] = self.originalColor.darker
 end
 
-function Button:clickRelease(_, _, but)
-    if but == 1 then
-        self.held = false
+function Button:clickRelease_left()
+	self.held = false
 
-		self.palette.container[1] = self.originalColor
+	self.palette.container[1] = self.originalColor
 
-        if self.hl then
-			self.palette.container[1] = self.originalColor.brighter
-            self:action()
-        end
-    end
+	if self.hl then
+		self.palette.container[1] = self.originalColor.brighter
+		self:action()
+	end
 end
 
 function Button:keyPress(key)

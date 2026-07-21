@@ -21,7 +21,7 @@
 ---@field protected parent CompositeObject UI object parent
 ---@field protected defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
 ---@field protected layout LayoutProperties
----@field protected font love.Font|table
+---@field public font love.Font|table
 ---@field public pleaseRedraw boolean
 ---@field public pictureDirty boolean
 local ObjectUI = {
@@ -364,6 +364,47 @@ end
 ---@param but number
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:click(x, y, but)
+	if but == 1 then
+		return self:click_left(x, y)
+	end
+
+	if but == 2 then
+		return self:click_right(x, y)
+	end
+
+	if but == 3 then
+		return self:click_middle(x, y)
+	end
+
+	return self:click_other(x, y, but)
+end
+
+---Perform left click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:click_left(x, y)
+end
+
+---Perform right click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:click_right(x, y)
+	return self.parent:click_right(x, y)
+end
+
+---Perform middle click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:click_middle(x, y)
+	return self.parent:click_middle(x, y)
+end
+
+---Perform other click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:click_other(x, y, but)
+	return self.parent:click_other(x, y, but)
 end
 
 ---Perform double click action on UI object<br>**This function is virtual and must be defined in a child class**
@@ -372,7 +413,48 @@ end
 ---@param but number
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:doubleClick(x, y, but)
-	self:click(x, y, but)
+	if but == 1 then
+		return self:doubleClick_left(x, y)
+	end
+
+	if but == 2 then
+		return self:doubleClick_right(x, y)
+	end
+
+	if but == 3 then
+		return self:doubleClick_middle(x, y)
+	end
+
+	return self:doubleClick_other(x, y, but)
+end
+
+---Perform left click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:doubleClick_left(x, y)
+	return self:click_left(x, y)
+end
+
+---Perform right click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:doubleClick_right(x, y)
+	return self:click_right(x, y)
+end
+
+---Perform middle click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:doubleClick_middle(x, y)
+	return self:click_middle(x, y)
+end
+
+---Perform other click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:doubleClick_other(x, y, but)
+	return self:click_other(x, y, but)
 end
 
 ---Perform click release action on UI object<br>**This function is virtual and must be defined in a child class**
@@ -382,6 +464,47 @@ end
 ---@return boolean? pass Return **true**, if object skips click release processing and possibly directs it to the hl object.
 ---@diagnostic disable-next-line: unused-local
 function ObjectUI:clickRelease(x, y, but)
+	if but == 1 then
+		return self:clickRelease_left(x, y)
+	end
+
+	if but == 2 then
+		return self:clickRelease_right(x, y)
+	end
+
+	if but == 3 then
+		return self:clickRelease_middle(x, y)
+	end
+
+	return self:clickRelease_other(x, y, but)
+end
+
+---Perform left click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+---@diagnostic disable-next-line: unused-local
+function ObjectUI:clickRelease_left(x, y)
+end
+
+---Perform right click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:clickRelease_right(x, y)
+	return self.parent:clickRelease_right(x, y)
+end
+
+---Perform middle click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:clickRelease_middle(x, y)
+	return self.parent:clickRelease_middle(x, y)
+end
+
+---Perform other click action on UI object<br>**This function is virtual and must be defined in a child class**
+---@param x pixels
+---@param y pixels
+function ObjectUI:clickRelease_other(x, y, but)
+	return self.parent:clickRelease_other(x, y, but)
 end
 
 ---Perform click release action on UI object. Implies initial click action was not on THIS object.<br>Direct result of returning **true** from ObjectUI:clickRelease() of another object.<br>**This function is virtual and must be defined in a child class**

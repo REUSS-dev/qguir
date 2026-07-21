@@ -79,6 +79,10 @@ end
 ---Regenerate crucial data for button text printing (to be rewritten for new layout system)
 ---@package
 function Label:generateTextCache()
+	if not self.h then
+		return
+	end
+
     self.textCache = {}
 
     local fontHeight = self.font:getHeight()

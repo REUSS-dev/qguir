@@ -1,3 +1,7 @@
+-- StellarGUI 2/classes/primitives/Canvas.lua
+
+local function nop()
+end
 
 ---@class CanvasObject : CompositeObject
 ---@field CompositeObject CompositeObject
@@ -82,8 +86,25 @@ function CanvasObject:resize(new_w, new_h)
 	self:redraw()
 end
 
-function CanvasObject:wheel()
-end
+CanvasObject.click = nop
+CanvasObject.click_left = nop
+CanvasObject.click_right = nop
+CanvasObject.click_middle = nop
+CanvasObject.click_other = nop
+
+CanvasObject.clickRelease = nop
+CanvasObject.clickRelease_left = nop
+CanvasObject.clickRelease_right = nop
+CanvasObject.clickRelease_middle = nop
+CanvasObject.clickRelease_other = nop
+
+CanvasObject.doubleClick = nop
+CanvasObject.doubleClick_left = nop
+CanvasObject.doubleClick_right = nop
+CanvasObject.doubleClick_middle = nop
+CanvasObject.doubleClick_other = nop
+
+CanvasObject.wheel = nop
 
 function CanvasObject:new()
 	self.x = self.x or 0

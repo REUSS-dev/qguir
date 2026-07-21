@@ -2,6 +2,8 @@
 
 local gui = require("stellargui")
 
+---@class Container : CompositeObject
+
 -- classes
 
 ---@class CompositeObject : ObjectUI
@@ -193,6 +195,10 @@ function CompositeObject:remove(to_remove)
     end
 end
 
+
+---@generic T
+---@param object_type `T`
+---@return fun(prototype: table): T
 function CompositeObject:createChild(object_type)
 	local descriptor = self:create(object_type)
 
@@ -206,6 +212,9 @@ function CompositeObject:createChild(object_type)
 	return childinit
 end
 
+---@generic T
+---@param object_type `T`
+---@return fun(prototype: table): T
 function CompositeObject:create(object_type)
 	return assert(self:getObjectClass(object_type or self), "There is no registered UI object with a name \"" .. object_type .. "\"") -- allows to call both with a function call "." and method call ":"
 end

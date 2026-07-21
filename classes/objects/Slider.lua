@@ -58,25 +58,21 @@ function Slider:checkHover(x, y)
     return self.ObjectUI.checkHover(self, x, y) or self:checkHoverSelector(x, y)
 end
 
-function Slider:click(x, y, but)
-    if but == 1 then
-        self.held = true
+function Slider:click_left(x, y)
+	self.held = true
 
-        if not self:checkHoverSelector(x, y) then
-            local new_selector_x = x
+	if not self:checkHoverSelector(x, y) then
+		local new_selector_x = x
 
-            self:setValue(new_selector_x / self.w)
-        end
+		self:setValue(new_selector_x / self.w)
+	end
 
-        self.selector.clickedX = x + (self:getTranslation())
-        self.selector.previousX = self.selector.x
-    end
+	self.selector.clickedX = x + (self:getTranslation())
+	self.selector.previousX = self.selector.x
 end
 
-function Slider:clickRelease(_, _, but)
-    if but == 1 then
-        self.held = false
-    end
+function Slider:clickRelease_left()
+	self.held = false
 end
 
 function Slider:tick(_)
