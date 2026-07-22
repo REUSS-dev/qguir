@@ -53,6 +53,8 @@ function FontStorage:getFont(name, size)
 	assert(type(size) == "number", "bad argument #2 to 'FontStorage:getFont()' (number expected, got " .. type(size) .. ")")
 	assert(self.cache[name], "FontStorage: No source for font \"" .. name .. "\" in storage instance")
 
+	size = math.floor(size)
+
 	if not self.cache[name][size] then
 		self:generateFont(name, size)
 	end

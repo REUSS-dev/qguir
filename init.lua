@@ -332,6 +332,10 @@ function stellar.getObjectDescriptor(descriptor_name)
 	return object_descriptors[descriptor_name]
 end
 
+function stellar.getFontStorage()
+    return fontStorage
+end
+
 ---@param path love.FileData|string
 function stellar.setDefaultFont(path)
 	fontStorage:registerFont("default", path)
