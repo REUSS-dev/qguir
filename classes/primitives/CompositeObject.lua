@@ -623,11 +623,11 @@ function CompositeObject:wheel(x, y)
 		return
 	end
 
-	self:moveScroll(y)
+	self:moveScroll(10*y)
 end
 
 function CompositeObject:moveScroll(value)
-	self.currentScroll = math.max(0, math.min(self.maxScroll, self.currentScroll - 10*value))
+	self.currentScroll = math.max(0, math.min(self.maxScroll, self.currentScroll - value))
 	self:redraw()
 end
 
