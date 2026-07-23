@@ -620,6 +620,7 @@ end
 function CompositeObject:wheel(x, y)
 	if not self.scroll then
 		self.ObjectUI.wheel(self, x, y)
+		return
 	end
 
 	self:moveScroll(y)
