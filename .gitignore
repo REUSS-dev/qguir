@@ -1,2 +1,4 @@
 font.ttf
 conf.lua
+.vscode
+*.code-workspace
