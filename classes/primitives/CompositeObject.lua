@@ -249,11 +249,19 @@ function CompositeObject:setPadding(left, top, right, bottom)
 end
 
 function CompositeObject:getLayoutSize(w, h)
-	if self.w and self.h and self.layout.w ~= "fill" and self.layout.h ~= "fill" then
-		return self.w, self.h
+	if not self.w or not self.h then
+		return self:autolayout(w, h)
 	end
 
-	return self:autolayout(w, h)
+	if self.layout.w == "fill" and self.w ~= w then
+		return self:autolayout(w, h)
+	end
+
+	if self.layout.h == "fill" and self.h ~= h then
+		return self:autolayout(w, h)
+	end
+
+	return self.w, self.h
 end
 
 function CompositeObject:relayout()
@@ -623,7 +631,7 @@ function CompositeObject:wheel(x, y)
 		return
 	end
 
-	self:moveScroll(10*y)
+	self:moveScroll(20*y)
 end
 
 function CompositeObject:moveScroll(value)
