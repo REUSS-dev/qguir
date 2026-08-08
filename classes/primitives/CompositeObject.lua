@@ -49,7 +49,7 @@ local CompositeObject = {
 function CompositeObject:checkHover(x, y)
 	local boundaries_hover = self.ObjectUI.checkHover(self, x, y)
 
-    if not boundaries_hover and not self:hasFocus() then
+    if not boundaries_hover then
         return false
     end
 

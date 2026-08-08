@@ -1,16 +1,23 @@
 -- label
 
+local gui = require("stellargui")
+
 local utf = require("utf8")
 
 ---@class Label : ObjectUI
 ---@field ObjectUI ObjectUI
+---@field noLocale boolean
+---@field text_binding string Locale string address OR plain string
+---@field text string Visual text
+---@field curParams table Current parameters for parametrized text
 ---@field textCache table Set of data for printing button text. WARNING: This should be nullified on label size/text change.
----@field text string Button text
 local Label = {
 	name = "Label",
 	rules = {
 		"palette",
-		{{"text", "label"}, "text"},
+		{{"text", "label"}, "text_binding"},
+		{{"no_localize", "ignore_locale", "no_locale"}, "noLocale"},
+		{{"format", "cur_params", "params", "with"}, "curParams"}
 	},
 	default = {
 		w = "hug", h = "hug",
@@ -18,8 +25,11 @@ local Label = {
 		font = 12,
 
 		horizontal = "left",
-		textColor = {1, 1, 1, 1}
-	}
+		textColor = {1, 1, 1, 1},
+		noLocale = false
+	},
+
+	locale = gui.getLocaleStorage()
 }
 
 function Label:paint()
@@ -59,8 +69,19 @@ function Label:getLayoutSize(fill_w, fill_h)
 	return ow, oh
 end
 
-function Label:setText(new_text)
-	self.text = new_text
+function Label:setText(new_text, params)
+	new_text = new_text or self.text_binding
+	params = params or self.curParams
+
+	self.text_binding = new_text
+
+	if self.noLocale then
+		self.text = new_text
+	else
+		self.text = self.locale:format(self.text_binding, params)
+		self.curParams = params
+	end
+
 	self:generateTextCache()
 
 	if self.parent then
@@ -108,8 +129,12 @@ function Label:generateTextCache()
 
         self.textCache.textVisual = tocut .. ".."
     end
+end
 
+function Label:new()
 	self:setInteractible(false)
+
+	self:setText()
 end
 
 return Label

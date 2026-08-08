@@ -9,6 +9,7 @@ package.loaded["stellargui"] = stellar
 local utf = require("utf8")
 
 local FontStorage = require("classes.FontStorage")
+local LocaleStorage = require("classes.LocaleStorage")
 local parse = require("scripts.parse")
 
 -- documentation
@@ -33,15 +34,17 @@ local externalTypesDir = selfpath .. "/classes/objects"
 local DEFAULT_CURSOR = "arrow"
 local DEFAULT_DOUBLE_CLICK_TIME = 0.5
 
+local LOCALE_DIR_DEFAULT = "locale"
+
 -- vars
 
 local currentCursor = DEFAULT_CURSOR ---@type love.CursorType
 local doubleClickTime = DEFAULT_DOUBLE_CLICK_TIME
 
-
 local object_descriptors = {}       ---@type table<string, ObjectUI>
 local cursorStorage = {}            ---@type {[love.CursorType|string]: love.Cursor}
 local fontStorage					---@type FontStorage
+local localeStorage                 ---@type LocaleStorage
 
 local current_canvas				---@type CanvasObject
 local canvases = {}					---@type CanvasObject[]
@@ -332,6 +335,14 @@ function stellar.getObjectDescriptor(descriptor_name)
 	return object_descriptors[descriptor_name]
 end
 
+function stellar.getLocaleStorage()
+    return localeStorage
+end
+
+function stellar.setLocale(new_locale)
+    localeStorage:setLocale(new_locale)
+end
+
 function stellar.getFontStorage()
     return fontStorage
 end
@@ -382,7 +393,7 @@ function stellar.hook(force)
     end
 
     --- Set up callbacks
-    
+
     local love_update, love_draw, love_mousepressed, love_mousereleased, love_keypressed, love_keyreleased, love_textinput, love_resize, love_wheelmoved = love.update or nopFunc, love.draw or nopFunc, love.mousepressed or nopFunc, love.mousereleased or nopFunc, love.keypressed or nopFunc, love.keyreleased or nopFunc, love.textinput or nopFunc, love.resize or nopFunc, love.wheelmoved or nopFunc
 
     love.update = function(dt)
@@ -539,6 +550,10 @@ function stellar.hook(force)
 
 	fontStorage = FontStorage()
 	parse.setFontStorage(fontStorage)
+
+    localeStorage = LocaleStorage()
+    localeStorage:setLocalePath(LOCALE_DIR_DEFAULT)
+    localeStorage:setLocale()
 
 	local new_canvas = stellar.createCanvas()
 	stellar.storeCanvas(1, new_canvas)

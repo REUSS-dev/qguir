@@ -105,7 +105,7 @@ function FontStorage:setFileCaching(new_flag)
 	return self
 end
 
-function FontStorage.new()
+function FontStorage:new()
 	local new_storage = {
 		sources = {},
 		cache = {},
