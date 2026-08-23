@@ -16,6 +16,7 @@ local LOCALE_DEFAULT = "en"
 
 ---@enum PluralCategory
 local PluralCategory = {
+    ZERO = "zero",
     ONE = "one",
     FEW = "few",
     MANY = "many",
@@ -74,6 +75,10 @@ local plural = {
 ---@type (fun(self: LocaleStorage, modifier: PatternModifer, vars: any[]|table<string, any>, str: LocalizedString): string)[]
 local modifiers = {
     plural = function (self, modifier, vars, str)
+        if vars[modifier.var] == 0 and modifier.params[PluralCategory.ZERO] then
+            return modifier.params[PluralCategory.ZERO]
+        end
+
         return modifier.params[plural[self.currentLanguage].cardinal(vars[modifier.var] or -1)] or modifier.params[PluralCategory.OTHER] or "nil"
     end
 }
@@ -96,10 +101,6 @@ function LocaleStorage:format(key, variables)
     end
 
     if typ == "string" then
-        if variables then
-            return string.format(str, unpack(variables))
-        end
-
         return str
     end
 
@@ -126,6 +127,10 @@ function LocaleStorage:get(key)
     end
 
     return str
+end
+
+function LocaleStorage:rawget(key)
+    return self.text[key]
 end
 
 ---@param new_path string
@@ -443,7 +448,7 @@ function LocaleStorage:processString(val)
         return fstring
     end
 
-    fstring[#fstring+1] = string.sub(copy_beg, -1)
+    fstring[#fstring+1] = string.sub(val, copy_beg, -1)
 
     return fstring
 end

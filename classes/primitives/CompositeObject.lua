@@ -219,6 +219,9 @@ function CompositeObject:create(object_type)
 	return assert(self:getObjectClass(object_type or self), "There is no registered UI object with a name \"" .. object_type .. "\"") -- allows to call both with a function call "." and method call ":"
 end
 
+---@generic T
+---@param object_type `T`
+---@return T
 function CompositeObject:getObjectClass(object_type)
 	return gui[object_type]
 end

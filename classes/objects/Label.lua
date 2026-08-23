@@ -26,7 +26,8 @@ local Label = {
 
 		horizontal = "left",
 		textColor = {1, 1, 1, 1},
-		noLocale = false
+		noLocale = false,
+		cur_params = {}
 	},
 
 	locale = gui.getLocaleStorage()
@@ -67,6 +68,10 @@ function Label:getLayoutSize(fill_w, fill_h)
 	end
 
 	return ow, oh
+end
+
+function Label:setData(...)
+	self:setText(nil, {...})
 end
 
 function Label:setText(new_text, params)
