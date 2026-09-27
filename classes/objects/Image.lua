@@ -2,7 +2,7 @@
 
 -- documentation
 
----@alias ImageDisplayMode "normal"|"stretch"|"limit"
+---@alias ImageDisplayMode "normal"|"stretch"|"limit"|"fixed"
 ---@alias ImageDrawCache {x: integer, y: integer, wscale: number, hscale: number}
 
 -- vars
@@ -22,6 +22,7 @@ end
 ---@field r number Radius of round corner
 ---@field image love.Image
 ---@field display ImageDisplayMode
+---@field limitSize number
 ---@field drawCache ImageDrawCache
 local Image = {
 	name = "Image",
@@ -30,6 +31,7 @@ local Image = {
 
 		{{"image", "img", "picture"}, "image"},
 		{{"displayMode", "display"}, "display", "normal"},
+		{{"limit_size", "limitSize", "limit", "size"}, "limitSize", 1},
     	{{"r", "radius", "rounding", "round"}, "r"}
 	},
 	default = {
@@ -65,11 +67,14 @@ function Image:getLayoutSize(fill_w, fill_h)
 	local ow, oh = self.ObjectUI.getLayoutSize(self, fill_w, fill_h)
 
 	if not ow or not oh then
-		if self.layout.w == "hug" then
-			if self.layout.h == "hug" then
+		if self.layout.w == "hug" and self.layout.h == "hug" then
+			if self.display == "fixed" then
+				ow = math.floor(self.image:getWidth() * self.limitSize + .5)
+				oh = math.floor(self.image:getHeight() * self.limitSize + .5)
+			else
 				error("Image object cannot be [\"hug\", \"hug\"]")
 			end
-
+		elseif self.layout.w == "hug" then
 			if self.display == "stretch" then
 				error("Image object display mode cannot be \"stretch\", when one of dimensions is \"hug\"")
 			end
@@ -83,7 +88,9 @@ function Image:getLayoutSize(fill_w, fill_h)
 				local scale = oh / img_h
 
 				if self.display == "limit" then
-					scale = math.min(scale, 1)
+					scale = math.min(scale, self.limitSize)
+				elseif self.display == "fixed" then
+					scale = self.limitSize
 				end
 
 				ow = math.floor(self.image:getWidth() * scale + .5)
@@ -104,7 +111,9 @@ function Image:getLayoutSize(fill_w, fill_h)
 				local scale = ow / img_w
 
 				if self.display == "limit" then
-					scale = math.min(scale, 1)
+					scale = math.min(scale, self.limitSize)
+				elseif self.display == "fixed" then
+					scale = self.limitSize
 				end
 
 				oh = math.floor(self.image:getHeight() * scale + .5)
@@ -153,8 +162,15 @@ function Image:calculateDrawParameters()
 		end
 
 		if self.display == "limit" then
-			scale = math.min(scale, 1)
+			scale = math.min(scale, self.limitSize)
 		end
+
+		drawCache.x = math.floor((self.w - img_w * scale)/2 + .5)
+		drawCache.y = math.floor((self.h - img_h * scale)/2 + .5)
+		drawCache.wscale = scale
+		drawCache.hscale = scale
+	elseif self.display == "fixed" then
+		local scale = self.limitSize
 
 		drawCache.x = math.floor((self.w - img_w * scale)/2 + .5)
 		drawCache.y = math.floor((self.h - img_h * scale)/2 + .5)
@@ -168,12 +184,26 @@ end
 -- image fnc
 
 function Image:new()
-	if self.display ~= "normal" and self.display ~= "stretch" and self.display ~= "limit" then
-		error("Display mode of an image can be: normal, stretch, limit. Got: " .. self.display)
+	if self.display ~= "normal" and self.display ~= "stretch" and self.display ~= "limit" and self.display ~= "fixed" then
+		error("Display mode of an image can be: normal, stretch, limit, fixed. Got: " .. self.display)
 	end
 
 	if not self.image then
 		error("Image must be provided for an Image object")
+	end
+
+	if type(self.image) == "string" then
+		local succ, image = pcall(love.graphics.newImage, self.image)
+
+		if not succ then
+			error("Error loading an image for an Image object: " .. image)
+		end
+
+		self.image = image
+	end
+
+	if type(self.image) ~= "userdata" or not self.image.typeOf or not self.image:typeOf("Image") then
+		error("An image for an Image object must be type Image or string path to a file. Received type: " .. type(self.image) .. (self.image.type and (" (" .. self.image:type() .. ")") or ""))
 	end
 end
 
