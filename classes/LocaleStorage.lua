@@ -92,6 +92,9 @@ local modifiers = {
 local LocaleStorage = {}
 LocaleStorage.__index = LocaleStorage
 
+---@param key string
+---@param variables table
+---@return string
 function LocaleStorage:format(key, variables)
     local str = self:get(key)
     local typ = type(str)
