@@ -5,25 +5,25 @@
 -- classes
 
 ---@class ObjectUI
----@field protected extends string|false|nil Name of a parent Object class
----@field public alias string?
----@field public cursors table<string, love.Cursor>?
----@field protected x pixels X coordinate of the UI object in pixels.
----@field protected y pixels Y coordinate of the UI object in pixels.
----@field protected w pixels Width of the UI object in pixels.
----@field protected h pixels Height of the UI object in pixels.
----@field protected hl boolean Flag, if the UI object is currently hovered on.
----@field protected focus boolean Flag, if the UI object is currently focused on.
----@field protected draw boolean Flag, if the UI object should be drawn on screen on paint call.
----@field protected update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
----@field protected interactible boolean Flag, if the UI object is interactible by any means.
----@field protected palette Palette UI object color palette ( ---@todo temporary?)
----@field protected parent CompositeObject UI object parent
----@field protected defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
----@field protected layout LayoutProperties
----@field public font love.Font|table
----@field public pleaseRedraw boolean
----@field public pictureDirty boolean
+---@field extends string|false|nil Name of a parent Object class
+---@field alias string?
+---@field cursors table<string, love.Cursor>?
+---@field x pixels X coordinate of the UI object in pixels.
+---@field y pixels Y coordinate of the UI object in pixels.
+---@field w pixels Width of the UI object in pixels.
+---@field h pixels Height of the UI object in pixels.
+---@field hl boolean Flag, if the UI object is currently hovered on.
+---@field focus boolean Flag, if the UI object is currently focused on.
+---@field draw boolean Flag, if the UI object should be drawn on screen on paint call.
+---@field update boolean Flag, if the UI object should be updated on tick call.<br>If **false**, a UI object also should be treated as non-interactible (as if *interactible* flag was also set to false).
+---@field interactible boolean Flag, if the UI object is interactible by any means.
+---@field palette Palette UI object color palette ( ---@todo temporary?)
+---@field parent CompositeObject UI object parent
+---@field defaultCursor string? Optional parameter. Cursor set when hoverOn of UI object triggers
+---@field layout LayoutProperties
+---@field font love.Font|table
+---@field pleaseRedraw boolean
+---@field pictureDirty boolean
 local ObjectUI = {
 	name = "ObjectUI",
 	extends = false,
