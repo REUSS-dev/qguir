@@ -415,6 +415,12 @@ function LocaleStorage:processString(val)
                     end
                 end
             elseif ch == "%" then
+                if copy_beg ~= pos + 1 then
+                    fstring[#fstring+1] = string.sub(val, copy_beg, pos)
+                end
+
+                copy_beg = pos + 2
+
                 ignore_next = true
             elseif ch == "{" then
                 if copy_beg ~= pos + 1 then
